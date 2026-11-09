@@ -173,10 +173,13 @@ function cursor(): () => void {
   const hide = () => ring.classList.remove("is-visible");
   const show = () => ring.classList.add("is-visible");
   window.addEventListener("pointermove", move, { passive: true });
+  // Hidden while the page scrolls under a still mouse, so it never sits on content as a stray dot.
+  window.addEventListener("scroll", hide, { passive: true });
   document.documentElement.addEventListener("pointerleave", hide);
   document.documentElement.addEventListener("pointerenter", show);
   return () => {
     window.removeEventListener("pointermove", move);
+    window.removeEventListener("scroll", hide);
     document.documentElement.removeEventListener("pointerleave", hide);
     document.documentElement.removeEventListener("pointerenter", show);
     ring.remove();

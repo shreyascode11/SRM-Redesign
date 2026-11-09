@@ -1429,6 +1429,16 @@ html[data-intro="on"] .grail-intro {
 }
 
 /* ── Hostel finder: name tags floating over the 3D campus (HostelScene) ── */
+/* A tag that would cover another fades out (HostelScene places them in order of importance each frame). */
+.hostel-tagbox {
+  transition: opacity 180ms ease;
+}
+.hostel-tagbox[data-hidden] {
+  opacity: 0;
+}
+.hostel-tagbox[data-hidden] * {
+  pointer-events: none !important;
+}
 .hostel-tag {
   display: inline-flex;
   align-items: center;
