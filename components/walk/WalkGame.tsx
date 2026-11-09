@@ -26,7 +26,8 @@ function skyFor(h: number): Sky {
  */
 const tap = (fn: () => void) => ({
   onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    // A mouse click must not leave focus on the button: Space would then press it again instead of jumping.
+    if (e.pointerType === "mouse") return void e.preventDefault();
     e.preventDefault();
     e.currentTarget.dataset.tapped = "1";
     fn();
@@ -52,6 +53,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const [near, setNear] = useState<{ person: string | null; place: string | null }>({ person: null, place: null });
   const [talk, setTalk] = useState<Talk | null>(null);
   const [walker, setWalker] = useState<{ i: number; name: string; to: string } | null>(null);
+  /** True once you move around with Tab, until the next mouse or finger press. */
+  const tabNav = useRef(false);
   // The "Next stop" banner can be folded away on a small screen (remembered for this visit).
   const [bannerHidden, setBannerHidden] = useState(() => {
     try {
@@ -293,9 +296,15 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       const g = game.current;
       if (!g || isField(e)) return;
       const k = e.key.toLowerCase();
+      // A button or link you reached with Tab keeps Space and Enter for itself. One that only holds focus because you
+      // clicked it (the start screen's "Begin", a HUD button) doesn't: the key belongs to the game. (Not :focus-visible:
+      // Chrome turns that on for the focused element during this very key press.)
+      if (k === "tab") tabNav.current = true;
+      const tabbedTo = tabNav.current && (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement);
       if (k === " " && !talk && (!panel || panel === "emote")) {
-        if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement) return;
+        if (tabbedTo) return;
         e.preventDefault();
+        (e.target as HTMLElement).blur?.();
         jump(g);
         return;
       }
@@ -315,7 +324,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       }
       if (talk || (panel && panel !== "emote")) return;
       if (k === "e" || k === "enter") {
-        if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement) return;
+        if (k === "enter" && tabbedTo) return;
+        e.preventDefault();
         action();
       } else if (k === "q") setPanel((p) => (p === "emote" ? null : "emote"));
       else if (k === "m") setPanel("map");
@@ -324,10 +334,15 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     };
     const up = (e: KeyboardEvent) => game.current?.keys.delete(e.key.toLowerCase());
     const blur = () => game.current?.keys.clear();
+    const pointer = () => {
+      tabNav.current = false;
+    };
+    window.addEventListener("pointerdown", pointer, true);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("blur", blur);
     return () => {
+      window.removeEventListener("pointerdown", pointer, true);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
