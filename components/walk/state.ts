@@ -37,6 +37,8 @@ export type Game = {
   target: XZ | null;
   near: { person: string | null; place: string | null };
   reduced: boolean;
+  /** Students walking about: the one you're next to, one you just said hello to, and when you last emoted. */
+  crowd: { near: number | null; greet: number | null; emoteAt: number };
 };
 
 export const newGame = (start: XZ, people: string[]): Game => ({
@@ -61,6 +63,7 @@ export const newGame = (start: XZ, people: string[]): Game => ({
   target: null,
   near: { person: null, place: null },
   reduced: false,
+  crowd: { near: null, greet: null, emoteAt: 0 },
 });
 
 export type Progress = { active: Record<string, number>; done: string[]; tracked: string | null };

@@ -27,6 +27,7 @@ export async function getNavData(): Promise<NavData> {
     // Apply goes to our hub, not straight to the portal: SRM's portal sometimes answers 403, and the hub has the fallbacks.
     apply: { label: t("applyLong"), href: "/admissions#apply" },
     enquiry: { label: t("enquiry"), href: "/admissions#enquiry" },
+    play: { label: t("play"), href: "/walk" },
     call: { label: t("callAdmissions"), display: site.admissions.phones[0]!.display, tel: site.admissions.phones[0]!.tel },
     compare: { label: t("compare"), href: "/compare" },
     sections: [

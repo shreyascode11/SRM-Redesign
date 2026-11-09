@@ -56,6 +56,12 @@
       "href": "/student-life"
     },
     {
+      "id": "srm-hotel",
+      "osm": "SRM Hotel",
+      "name": "SRM Hotel",
+      "kind": "other"
+    },
+    {
       "id": "tech-park",
       "osm": "SRM Tech Park",
       "name": "SRM Tech Park",
@@ -121,6 +127,12 @@
       "href": "/programmes/btech-mechanical"
     },
     {
+      "id": "mech-pg",
+      "osm": "Mechanical PG Block",
+      "name": "Mechanical PG Block",
+      "kind": "academic"
+    },
+    {
       "id": "mech-hangar",
       "osm": "Mechanical Hanger",
       "name": "Mechanical Hangar",
@@ -167,18 +179,45 @@
     },
     {
       "id": "hospital",
-      "osm": "SRM General Hospital",
-      "name": "SRM General Hospital",
+      "osm": "SRM Global Hospitals",
+      "name": "SRM Global Hospitals",
       "kind": "health",
       "href": "/programmes/mbbs",
-      "photo": "media/colleges/medicine.jpg"
+      "photo": "media/colleges/medicine.jpg",
+      "build": {
+        "w": 80,
+        "d": 34,
+        "floors": 8
+      }
     },
     {
       "id": "medical-college",
       "osm": "Srm Medical College Hospital And Research Centre",
       "name": "SRM Medical College Hospital and Research Centre",
       "kind": "health",
-      "href": "/programmes/mbbs"
+      "href": "/programmes/mbbs",
+      "build": {
+        "w": 70,
+        "d": 30,
+        "floors": 6
+      }
+    },
+    {
+      "id": "blood-bank",
+      "osm": "SRM Medical College Hospital Blood Bank",
+      "name": "SRM Blood Bank",
+      "kind": "health",
+      "build": {
+        "w": 24,
+        "d": 16,
+        "floors": 2
+      }
+    },
+    {
+      "id": "dean-quarters",
+      "osm": "SRM Medical Dean Quarters",
+      "name": "SRM Medical Dean Quarters",
+      "kind": "homes"
     },
     {
       "id": "paari",
@@ -279,6 +318,24 @@
       "name": "D Block Hostel",
       "kind": "hostel",
       "href": "/hostels#men"
+    },
+    {
+      "id": "sannasi-mess",
+      "osm": "Sannasi  Hostel Mess",
+      "name": "Sannasi Hostel Mess",
+      "kind": "food"
+    },
+    {
+      "id": "laundry",
+      "osm": "Vanga Laundry & Dry Cleaning Services",
+      "name": "Vanga Laundry",
+      "kind": "shop"
+    },
+    {
+      "id": "balaji-stores",
+      "osm": "Balaji Stores",
+      "name": "Balaji Stores",
+      "kind": "shop"
     },
     {
       "id": "ganesh-temple",

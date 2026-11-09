@@ -18,7 +18,10 @@ type Style = { wall: string; roof: string; win: number; bands?: string; parapet?
 
 const STYLES: Record<string, Style> = {
   techPark: { wall: "#f1efe8", roof: "#d8d4c8", win: 2, cap: "#8b2d32", parapet: "#e9e6dc" },
-  ub: { wall: "#e8935a", roof: "#cfc6b4", win: 1, cap: "#4a3a32" },
+  // Tech Park 2: the orange tower beside Tech Park (SRM's campus photo): punched windows, a bronze glass panel, an arch.
+  orangeTower: { wall: "#e8935a", roof: "#cfc6b4", win: 1, cap: "#4a3a32" },
+  // The University Building: white and cream, with blue-grey glass.
+  ub: { wall: "#f2efe7", roof: "#d6d2c8", win: 2, bands: "#e4dfd2", parapet: "#ebe7dd", cap: "#cfd8de" },
   hostel: { wall: "#ecd29c", roof: "#d9d0bd", win: 3, bands: "#f6f4ee", parapet: "#f2efe6", tanks: 3 },
   academic: { wall: "#eeebe3", roof: "#d3cdbf", win: 2, bands: "#dcd6c8", parapet: "#e4dfd3", tanks: 2 },
   food: { wall: "#f3dfb8", roof: "#cfc6b4", win: 2, parapet: "#e7dcc4", tanks: 1 },
@@ -31,7 +34,8 @@ const STYLES: Record<string, Style> = {
 const BY_KIND = ["other", "academic", "hostel", "food", "academic", "health", "faith", "workshop", "academic", "homes"];
 
 export const styleOf = (b: World["buildings"][number]): Style => {
-  if (b.n === "tech-park" || b.n === "tech-park-2") return STYLES.techPark!;
+  if (b.n === "tech-park") return STYLES.techPark!;
+  if (b.n === "tech-park-2") return STYLES.orangeTower!;
   if (b.n === "university-building") return STYLES.ub!;
   return STYLES[BY_KIND[b.k] ?? "other"]!;
 };
@@ -139,8 +143,16 @@ function shell(b: Buf, p: XZ[], y0: number, y1: number, wall: THREE.Color, roof:
     const n = [nx, 0, nz];
     const u0 = along;
     const u1 = along + len;
-    tri(b, wall, n, style, [a[0], y0, a[1], u0], [c[0], y0, c[1], u1], [c[0], y1, c[1], u1]);
-    tri(b, wall, n, style, [a[0], y0, a[1], u0], [c[0], y1, c[1], u1], [a[0], y1, a[1], u0]);
+    // Wind each wall so it faces out, whichever way round the footprint was drawn (OSM outlines go either way; a
+    // wall wound the wrong way is culled from outside and the building looks hollow, just its ledges and columns).
+    const out = -(c[1] - a[1]) * nx + (c[0] - a[0]) * nz > 0;
+    if (out) {
+      tri(b, wall, n, style, [a[0], y0, a[1], u0], [c[0], y0, c[1], u1], [c[0], y1, c[1], u1]);
+      tri(b, wall, n, style, [a[0], y0, a[1], u0], [c[0], y1, c[1], u1], [a[0], y1, a[1], u0]);
+    } else {
+      tri(b, wall, n, style, [a[0], y0, a[1], u0], [c[0], y1, c[1], u1], [c[0], y0, c[1], u1]);
+      tri(b, wall, n, style, [a[0], y0, a[1], u0], [a[0], y1, a[1], u0], [c[0], y1, c[1], u1]);
+    }
     along = u1 + 1.3; // a little offset per wall, so corners don't line up a window on both sides
   }
   if (roof) {
@@ -167,6 +179,13 @@ let seed = 3;
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const CYL = new THREE.CylinderGeometry(1, 1, 1, 14);
+/** A wheel, axle along local x: for the ambulance, scooters and bicycles. */
+const WHEEL = (() => {
+  const g = new THREE.CylinderGeometry(0.35, 0.35, 0.22, 12);
+  g.rotateZ(Math.PI / 2);
+  return g;
+})();
+const CLOTHES = ["#d8353f", "#2f6fd8", "#f2c42e", "#3f8f6b", "#f1f1ec", "#8a4fbf", "#ef8a3a"];
 const M = new THREE.Matrix4();
 const Q = new THREE.Quaternion();
 const S = new THREE.Vector3();
@@ -301,6 +320,46 @@ export function buildCampus(world: World, names: Record<string, string>) {
       }
     }
 
+    // Hostels (from SRM's photos): white balconies with railings stacked up the long walls between yellow piers, white
+    // fins, and washing hung out to dry on a few railings.
+    if (bld.k === 2 && !tiny && h > 9) {
+      const floors = Math.max(1, Math.round(h / 3.3));
+      for (let i = 0; i < p.length; i++) {
+        const a = p[i]!;
+        const c = p[(i + 1) % p.length]!;
+        const len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+        if (len < 14) continue;
+        const [nx, nz] = outward(p, i);
+        const ry = Math.atan2(nx, nz);
+        const bays = Math.floor(len / 4.6);
+        for (let k = 1; k < bays; k++) {
+          const t = (k + 0.5) / bays;
+          const bx = a[0] + (c[0] - a[0]) * t;
+          const bz = a[1] + (c[1] - a[1]) * t;
+          if (k % 2 === 0) {
+            // A white fin between bays.
+            addGeo(trim, BOX, place(bx + nx * 0.55, h / 2, bz + nz * 0.55, 0.28, h - 0.4, 1.1, ry), col("#f7f5ef"));
+            continue;
+          }
+          for (let f = 1; f < floors; f++) {
+            const y = f * 3.3;
+            addGeo(trim, BOX, place(bx + nx * 0.6, y, bz + nz * 0.6, 3.4, 0.16, 1.2, ry), col("#f4f1e8"));
+            addGeo(trim, BOX, place(bx + nx * 1.17, y + 0.5, bz + nz * 1.17, 3.4, 0.85, 0.07, ry), col("#f7f5ef"));
+            if (rnd() < 0.3) {
+              // Washing on the railing.
+              const n = 1 + Math.floor(rnd() * 3);
+              for (let j = 0; j < n; j++) {
+                const off = (j - (n - 1) / 2) * 0.9;
+                const ox = Math.cos(ry) * off;
+                const oz = -Math.sin(ry) * off;
+                addGeo(trim, BOX, place(bx + ox + nx * 1.22, y + 0.6, bz + oz + nz * 1.22, 0.6, 0.75, 0.05, ry), col(CLOTHES[Math.floor(rnd() * CLOTHES.length)]!));
+              }
+            }
+          }
+        }
+      }
+    }
+
     // ── Signature facades and entrances ──
     const entry = doorOf.get(bi);
     if (!entry) return;
@@ -338,7 +397,7 @@ export function buildCampus(world: World, names: Record<string, string>) {
       addGeo(trim, BOX, M.compose(P.set(...withY(at(tDoor, 0.55), 0.3)), Q.setFromEuler(E.set(0, ry, 0)), S.set(3.6, 0.2, 1.1)), col("#d9d3c5"));
     }
 
-    if (bld.n === "tech-park" || bld.n === "tech-park-2") {
+    if (bld.n === "tech-park") {
       // Yellow frame round a tall blue glass panel, with red and blue stripes either side.
       const w = Math.min(len * 0.45, 22);
       const t0 = Math.max(w / 2 + 1, Math.min(len - w / 2 - 1, tDoor));
@@ -350,14 +409,57 @@ export function buildCampus(world: World, names: Record<string, string>) {
       addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 - w / 2 - 1.6, 0.3), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.4, h - 2, 0.3)), col("#c8323d"));
       addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 + w / 2 + 1.6, 0.3), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.4, h - 2, 0.3)), col("#2b55b0"));
       signs.push({ text: "SRM Tech Park", bg: "#2f5fae", fg: "#ffffff", ...pos3(at(t0, 0.5), 5.5), ry, w: 8, h: 1.8 });
-    } else if (bld.n === "university-building") {
-      // A tall bronze glass panel and an arch at the foot.
+    } else if (bld.n === "tech-park-2") {
+      // The orange tower: a tall bronze glass panel and an arch at the foot.
       const w = Math.min(len * 0.42, 18);
       const t0 = Math.max(w / 2 + 1, Math.min(len - w / 2 - 1, tDoor));
       addGeo(glass, BOX, M.compose(P.set(...withY(at(t0, 0.2), h / 2 + 3)), Q.setFromEuler(E.set(0, ry, 0)), S.set(w, h - 9, 0.14)), col("#8f7d48"));
       const arch = new THREE.TorusGeometry(w / 2, 0.55, 8, 24, Math.PI);
       addGeo(trim, arch, M.compose(P.set(...withY(at(t0, 0.9), 0)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1, 0.55, 1)), col("#e8935a"));
-      signs.push({ text: "SRM University Building", bg: "#fbf3e6", fg: "#7a3b1f", ...pos3(at(t0, 1.0), 3.6), ry, w: 9, h: 1.3 });
+      signs.push({ text: "SRM Tech Park 2", bg: "#fbf3e6", fg: "#7a3b1f", ...pos3(at(t0, 1.0), 3.6), ry, w: 7, h: 1.3 });
+    } else if (bld.n === "university-building") {
+      // White and cream, with tall blue-grey glass bays framed in white, and a deep entrance portico.
+      const w = Math.min(len * 0.5, 22);
+      const t0 = Math.max(w / 2 + 1, Math.min(len - w / 2 - 1, tDoor));
+      for (const k of [-1, 0, 1]) {
+        const bw = w / 3 - 0.8;
+        addGeo(glass, BOX, M.compose(P.set(...withY(at(t0 + k * (w / 3), 0.22), h / 2 + 2.5)), Q.setFromEuler(E.set(0, ry, 0)), S.set(bw, h - 7, 0.14)), col("#6d8fa8"));
+        for (let y = 6.4; y < h - 1; y += 3.4) addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 + k * (w / 3), 0.32), y)), Q.setFromEuler(E.set(0, ry, 0)), S.set(bw, 0.14, 0.14)), col("#f7f5ef"));
+      }
+      for (const k of [-1.5, -0.5, 0.5, 1.5]) addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 + k * (w / 3), 0.45), h / 2 + 1)), Q.setFromEuler(E.set(0, ry, 0)), S.set(0.8, h - 2, 0.9)), col("#fbfaf6"));
+      const [cx, cz] = at(t0, 3.2);
+      addGeo(trim, BOX, M.compose(P.set(cx, 5.2, cz), Q.setFromEuler(E.set(0, ry, 0)), S.set(w * 0.6, 0.5, 6.4)), col("#f7f5ef"));
+      for (const k of [-1, -0.33, 0.33, 1]) {
+        const [px, pz] = at(t0 + k * w * 0.28, 6.0);
+        addGeo(trim, CYL, place(px, 2.5, pz, 0.35, 5, 0.35), col("#fbfaf6"));
+      }
+      signs.push({ text: "SRM University Building", bg: "#1f3a5f", fg: "#ffffff", ...pos3(at(t0, 6.45), 5.75), ry, w: 9, h: 0.9 });
+    } else if (bld.k === 5) {
+      // Hospital: a drop-off porch on columns, a red cross, a big name board and an ambulance at the door.
+      const [cx, cz] = at(tDoor, 3.4);
+      addGeo(trim, BOX, M.compose(P.set(cx, 4.2, cz), Q.setFromEuler(E.set(0, ry, 0)), S.set(10, 0.45, 6.6)), col("#f4f5f2"));
+      addGeo(trim, BOX, M.compose(P.set(cx, 4.5, cz), Q.setFromEuler(E.set(0, ry, 0)), S.set(10.2, 0.2, 6.8)), col("#2f7fb5"));
+      for (const k of [-1, 1])
+        for (const o of [1.2, 6.2]) {
+          const [px, pz] = at(tDoor + k * 4.4, o);
+          addGeo(trim, CYL, place(px, 2.1, pz, 0.22, 4.2, 0.22), col("#e9ecea"));
+        }
+      const [rx, rz] = at(tDoor, 0.2);
+      addGeo(trim, BOX, M.compose(P.set(rx, h - 2.5, rz), Q.setFromEuler(E.set(0, ry, 0)), S.set(3, 3, 0.3)), col("#ffffff"));
+      addGeo(trim, BOX, M.compose(P.set(...withY(at(tDoor, 0.4), h - 2.5)), Q.setFromEuler(E.set(0, ry, 0)), S.set(2.2, 0.7, 0.1)), col("#d8353f"));
+      addGeo(trim, BOX, M.compose(P.set(...withY(at(tDoor, 0.4), h - 2.5)), Q.setFromEuler(E.set(0, ry, 0)), S.set(0.7, 2.2, 0.1)), col("#d8353f"));
+      // Ambulance: white van, red stripe, blue light.
+      const [ax, az] = at(tDoor + 8, 4.5);
+      addGeo(trim, BOX, place(ax, 1.25, az, 2.0, 1.9, 4.6, ry), col("#f7f7f4"));
+      addGeo(trim, BOX, place(ax, 1.05, az, 2.04, 0.3, 4.62, ry), col("#d8353f"));
+      addGeo(trim, BOX, place(ax, 2.3, az, 0.6, 0.2, 0.3, ry), col("#2f6fd8"));
+      for (const sx of [-1, 1]) for (const sz of [-1.4, 1.4]) {
+        const ox = Math.cos(ry) * sx * 0.9 + Math.sin(ry) * sz;
+        const oz = -Math.sin(ry) * sx * 0.9 + Math.cos(ry) * sz;
+        addGeo(trim, WHEEL, place(ax + ox, 0.35, az + oz, 1, 1, 1, ry), col("#22252b"));
+      }
+      const label = (names[entry.id] ?? "").toUpperCase();
+      if (label) signs.push({ text: label, bg: "#ffffff", fg: "#1f5f99", ...pos3(at(tDoor, 0.75), Math.min(h - 6, 9)), ry, w: Math.min(16, 2 + label.length * 0.5), h: 1.6 });
     } else if (bld.k === 2) {
       // Hostel: blue name plate over a green curved awning.
       const name = entry.id.replace(/-/g, " ").toUpperCase().replace(" BLOCK", "");
@@ -365,6 +467,30 @@ export function buildCampus(world: World, names: Record<string, string>) {
       awning.rotateZ(Math.PI / 2);
       addGeo(trim, awning, M.compose(P.set(...withY(at(tDoor, 1.0), 3.0)), Q.setFromEuler(E.set(0, ry - Math.PI / 2, 0)), S.set(1, 1, 0.75)), col("#3f8f6b"));
       signs.push({ text: name, bg: "#2d4f8f", fg: "#ffffff", ...pos3(at(tDoor, 0.2), 5.6), ry, w: Math.min(6, 1.2 + name.length * 0.55), h: 1.2 });
+      // Bikes and scooters parked along the wall beside the door, and a notice board.
+      for (let j = 0; j < 7; j++) {
+        const side = j < 4 ? 1 : -1;
+        const tt = tDoor + side * (5.8 + (j % 4) * 1.1);
+        if (tt < 1 || tt > len - 1) continue;
+        const [vx, vz] = at(tt, 1.15);
+        const vry = ry + Math.PI / 2;
+        if (j % 2 === 0) {
+          // Scooter: body, seat, handlebar, two wheels.
+          const body = col(["#d8353f", "#2f6fd8", "#f1f1ec", "#22252b"][j % 4]!);
+          addGeo(trim, BOX, place(vx, 0.62, vz, 0.55, 0.5, 1.3, vry), body);
+          addGeo(trim, BOX, place(vx, 0.95, vz, 0.42, 0.12, 0.7, vry), col("#22252b"));
+          for (const o of [-0.62, 0.62]) addGeo(trim, WHEEL, place(vx + Math.sin(vry) * o, 0.3, vz + Math.cos(vry) * o, 0.7, 0.85, 0.85, vry), col("#22252b"));
+          addGeo(trim, BOX, place(vx + Math.sin(vry) * 0.62, 1.15, vz + Math.cos(vry) * 0.62, 0.7, 0.08, 0.08, vry), col("#3a3e45"));
+        } else {
+          // Bicycle: two thin wheels and a frame.
+          for (const o of [-0.5, 0.5]) addGeo(trim, WHEEL, place(vx + Math.sin(vry) * o, 0.35, vz + Math.cos(vry) * o, 0.3, 0.95, 0.95, vry), col("#2b2e33"));
+          addGeo(trim, BOX, place(vx, 0.62, vz, 0.06, 0.06, 1.0, vry), col(["#3f8f6b", "#d8353f", "#2f6fd8"][j % 3]!));
+          addGeo(trim, BOX, place(vx, 0.85, vz, 0.06, 0.4, 0.06, vry), col("#3a3e45"));
+        }
+      }
+      const [nbx, nbz] = at(tDoor - 2.6, 0.12);
+      addGeo(trim, BOX, place(nbx, 1.6, nbz, 1.2, 0.9, 0.06, ry), col("#7a5a3c"));
+      addGeo(trim, BOX, place(nbx, 1.6, nbz, 1.05, 0.75, 0.08, ry), col("#efe8d4"));
     } else {
       // Others: a flat entrance canopy on two posts and a name board.
       const [cx, cz] = at(tDoor, 1.6);

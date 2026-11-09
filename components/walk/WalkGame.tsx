@@ -30,6 +30,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const [progress, setProgress] = useState<Progress>(() => loadProgress(script.quests));
   const [near, setNear] = useState<{ person: string | null; place: string | null }>({ person: null, place: null });
   const [talk, setTalk] = useState<Talk | null>(null);
+  const [walker, setWalker] = useState<{ i: number; name: string; to: string } | null>(null);
   const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish">(startWithOutfit ? "outfit" : null);
   const [toast, setToast] = useState<string | null>(null);
   const [quality, setQuality] = useState<"auto" | "low" | "high">("auto");
@@ -223,17 +224,24 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const action = useCallback(() => {
     if (talk || panel) return;
     if (near.person) startTalk(near.person);
-    else if (pickHere) {
+    else if (walker) {
+      // A student walking by: they stop, wave, and tell you where they're off to.
+      const lines = [ui.crowdHi1, ui.crowdHi2, ui.crowdHi3].filter(Boolean) as string[];
+      const line = lines[(walker.i + Math.floor(Date.now() / 7000)) % lines.length] ?? "";
+      flash(`${walker.name}: ${fmt(line, { place: placeNames[walker.to] ?? ui.crowdSomewhere ?? "" })}`);
+      game.current.crowd.greet = walker.i;
+    } else if (pickHere) {
       const q = script.quests.find((x) => x.id === pickHere.q)!;
       flash(q.steps[pickHere.s]!.lines[0]!);
       game.current.anim.cheer = 0.8;
       advance(pickHere.q, pickHere.s);
     }
-  }, [talk, panel, near.person, pickHere, startTalk, advance, flash, script.quests]);
+  }, [talk, panel, near.person, walker, pickHere, startTalk, advance, flash, script.quests, ui, placeNames]);
 
   const emote = useCallback((glyph: string, id: string) => {
     const g = game.current;
     g.emote = { glyph, t: 2 };
+    g.crowd.emoteAt = performance.now() / 1000;
     if (id === "wave" || id === "vanakkam") g.anim.wave = 1.4;
     if (id === "cheer" || id === "party") g.anim.cheer = 1.2;
     // People nearby answer a wave with a wave.
@@ -395,6 +403,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               npcs={npcs}
               overlay={overlay}
               onNear={onNear}
+              onWalker={setWalker}
               highlight={near.place}
               pickAt={targetInfo?.pick ?? null}
               sky={sky}
@@ -491,9 +500,9 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                   </div>
                 ) : null}
                 <div className="flex flex-col items-end gap-2">
-                  {near.person || pickHere ? (
+                  {near.person || pickHere || walker ? (
                     <button type="button" onClick={action} className="walk-act pointer-events-auto inline-flex min-h-14 items-center gap-2 rounded-full bg-[#ffd166] px-6 text-lg font-bold text-black shadow-xl">
-                      {near.person ? `💬 ${ui.talk}` : `📦 ${fmt(ui.pick!, { item: script.items[pickHere!.item] ?? "" })}`}
+                      {near.person ? `💬 ${ui.talk}` : walker && !pickHere ? `👋 ${fmt(ui.crowdSay!, { name: walker.name })}` : `📦 ${fmt(ui.pick!, { item: script.items[pickHere!.item] ?? "" })}`}
                       <kbd className="hidden rounded bg-black/15 px-1.5 text-xs sm:inline">E</kbd>
                     </button>
                   ) : null}

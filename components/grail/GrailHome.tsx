@@ -151,6 +151,10 @@ export async function GrailHome() {
               <Link href="/programmes" className="inline-flex min-h-12 items-center rounded-full border border-[var(--line)] bg-black/40 px-6 font-semibold text-[var(--fg)] no-underline backdrop-blur hover:border-[var(--fg)]">
                 {t("hero.find")}
               </Link>
+              <Link href="/walk" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[var(--line)] bg-black/40 px-6 font-semibold text-[var(--fg)] no-underline backdrop-blur hover:border-[var(--fg)]">
+                <span aria-hidden="true">🎮</span>
+                {walk("promo.heroCta")}
+              </Link>
             </div>
             <div data-ab="hero-cta" data-ab-variant="b" data-ab-goal="hero-cta" className="flex w-full max-w-xl flex-col items-center gap-3">
               <p aria-hidden="true" className="grail-display text-[clamp(1.6rem,3.4vw,2.4rem)] leading-tight">
@@ -173,9 +177,15 @@ export async function GrailHome() {
                   {hero("submit")}
                 </button>
               </form>
-              <Link href="/admissions#apply" className="inline-flex min-h-11 items-center font-semibold text-[var(--fg)] underline underline-offset-4">
-                {t("hero.start")} →
-              </Link>
+              <div className="flex flex-wrap justify-center gap-x-6">
+                <Link href="/admissions#apply" className="inline-flex min-h-11 items-center font-semibold text-[var(--fg)] underline underline-offset-4">
+                  {t("hero.start")} →
+                </Link>
+                <Link href="/walk" className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-[var(--fg)] underline underline-offset-4">
+                  <span aria-hidden="true">🎮</span>
+                  {walk("promo.heroCta")} →
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -424,15 +434,18 @@ export async function GrailHome() {
           </div>
           <p className="mt-6 text-xs text-[var(--fg-muted)]">{ex("mapCredit")}</p>
           {/* Walk SRM: the campus as a small walkable world (/walk). */}
-          <div className="mt-10 grid items-center gap-6 overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#1f4fd8]/25 via-[#14101a] to-[#623562]/40 p-6 md:grid-cols-[1fr_auto] lg:p-10">
+          <div className="mt-10 grid items-center gap-6 overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#1f4fd8]/25 via-[#14101a] to-[#623562]/40 p-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:p-10">
+            <Link href="/walk" className="block overflow-hidden rounded-2xl border border-white/15 md:order-2" tabIndex={-1} aria-hidden="true">
+              <Image src="/walk/cover.jpg" alt={walk("promo.imageAlt")} width={1200} height={630} sizes="(min-width: 768px) 40vw, 100vw" className="h-auto w-full transition-transform duration-500 hover:scale-[1.03]" />
+            </Link>
             <div>
               <p className="text-sm font-semibold text-[#ffd166]">{walk("promo.kicker")}</p>
               <h3 className="grail-display mt-2 text-[clamp(2rem,4.5vw,3.5rem)] leading-none">{walk("promo.title")}</h3>
               <p className="mt-3 max-w-xl text-[var(--fg-muted)]">{walk("promo.text")}</p>
+              <Link href="/walk" className="grail-cta mt-6 w-fit">
+                {walk("promo.cta")} ▸
+              </Link>
             </div>
-            <Link href="/walk" className="grail-cta w-fit">
-              {walk("promo.cta")} ▸
-            </Link>
           </div>
         </div>
       </section>

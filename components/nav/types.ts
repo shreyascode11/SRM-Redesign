@@ -13,6 +13,8 @@ export type NavSection = {
 export type NavData = {
   sections: NavSection[];
   apply: NavLink;
+  /** The 3D campus game (/walk). */
+  play: NavLink;
   enquiry: NavLink;
   call: { label: string; display: string; tel: string };
   compare: NavLink;

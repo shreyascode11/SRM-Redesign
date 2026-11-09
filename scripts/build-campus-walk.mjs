@@ -201,6 +201,42 @@ const doorOf = (poly, toward) => {
   return q.map(r);
 };
 
+/** A rectangular block for a place OSM has no outline for: long side along the nearest road, kept off roads and other
+ *  buildings (shrunk if it doesn't fit). Returns its index. */
+function synthBuilding(x, z, pl) {
+  const q = nearestRoadPoint(x, z);
+  let nx = x - q[0];
+  let nz = z - q[1];
+  const nl = Math.hypot(nx, nz) || 1;
+  nx /= nl;
+  nz /= nl;
+  const tx = -nz;
+  const tz = nx;
+  let w = pl.build.w * SCALE;
+  let d = pl.build.d * SCALE;
+  for (let tries = 0; tries < 8; tries++) {
+    const back = 7 + d / 2;
+    const cx = q[0] + nx * back;
+    const cz = q[1] + nz * back;
+    const poly = [
+      [-w / 2, -d / 2],
+      [w / 2, -d / 2],
+      [w / 2, d / 2],
+      [-w / 2, d / 2],
+    ].map(([a, b]) => [r(cx + tx * a + nx * b), r(cz + tz * a + nz * b)]);
+    const samples = [];
+    for (let i = 0; i <= 6; i++) for (let j = 0; j <= 4; j++) samples.push([cx + tx * w * (i / 6 - 0.5), cz + tz * w * (i / 6 - 0.5)].map((v, k) => v + [nx, nz][k] * d * (j / 4 - 0.5)));
+    const clash = samples.some(([sx, sz]) => buildings.some((b) => inside(sx, sz, b.p)) || roads.some(({ p, w: rw }) => p.some((a, i) => i < p.length - 1 && Math.hypot(...[sx, sz].map((v, k) => v - closestOnSeg(sx, sz, a, p[i + 1])[k])) < rw / 2 + 1)));
+    if (!clash || tries === 7) {
+      buildings.push({ p: poly, h: Math.round(pl.build.floors * 3.4), k: KIND[pl.kind] ?? 0 });
+      return buildings.length - 1;
+    }
+    w *= 0.85;
+    d *= 0.85;
+  }
+  return -1;
+}
+
 // ── Places ──
 const places = {};
 const missing = [];
@@ -234,6 +270,9 @@ for (const pl of walk.places) {
   }
   let bi = n.building;
   if (bi === undefined) bi = buildings.findIndex((b) => inside(n.x, n.z, b.p));
+  // OSM marks some places only as a pin (SRM Global Hospitals, the medical college hospital, the blood bank): give them
+  // a block of the size in content/walk.json "build" (real metres, approximate), set back from the nearest road.
+  if (bi < 0 && pl.build) bi = synthBuilding(n.x, n.z, pl);
   let door;
   if (bi >= 0) {
     // A named point inside a building (the library in the University Building): its door faces that point;

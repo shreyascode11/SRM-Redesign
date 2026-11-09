@@ -102,6 +102,15 @@ export function SiteHeader({ nav }: { nav: NavData }) {
 
         <CommandPalette nav={nav} />
 
+        {/* The 3D campus game: always one tap away. */}
+        <Link
+          href={nav.play.href}
+          className="hidden min-h-11 items-center gap-1.5 rounded-full border border-line px-4 font-semibold whitespace-nowrap text-fg no-underline hover:border-fg sm:inline-flex"
+        >
+          <span aria-hidden="true">🎮</span>
+          {nav.play.label}
+        </Link>
+
         <SmartLink
           href={nav.apply.href}
           externalHint={nav.labels.external}
@@ -162,6 +171,13 @@ export function SiteHeader({ nav }: { nav: NavData }) {
           >
             {nav.enquiry.label}
           </SmartLink>
+          <Link
+            href={nav.play.href}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-line px-6 text-lg font-semibold text-fg no-underline"
+          >
+            <span aria-hidden="true">🎮</span>
+            {nav.play.label}
+          </Link>
         </div>
       </dialog>
     </header>

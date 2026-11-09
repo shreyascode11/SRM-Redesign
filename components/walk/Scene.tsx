@@ -23,6 +23,9 @@ export type Overlay = {
 };
 
 const WALK = 4.2;
+/** Students walking about, and their names (made up; they are characters, not real people). */
+const CROWD_SIZE = 16;
+const CROWD_NAMES = ["Arjun", "Priya", "Karthik", "Divya", "Rahul", "Ananya", "Vikram", "Sneha", "Aditya", "Meera", "Rohan", "Kavya", "Siddharth", "Lakshmi", "Farhan", "Aisha"];
 const RUN = 8;
 const tmp = new THREE.Vector3();
 const UP = 1.35;
@@ -50,6 +53,7 @@ export function Scene({
   npcs,
   overlay,
   onNear,
+  onWalker,
   highlight,
   pickAt,
   sky,
@@ -64,6 +68,7 @@ export function Scene({
   npcs: Npc[];
   overlay: Overlay;
   onNear: (person: string | null, place: string | null) => void;
+  onWalker: (w: { i: number; name: string; to: string } | null) => void;
   highlight: string | null;
   pickAt: XZ | null;
   sky: Sky;
@@ -87,21 +92,37 @@ export function Scene({
   );
   const sun = useRef<THREE.DirectionalLight>(null);
   const skyColors = useMemo(() => ({ top: sky.top, horizon: sky.horizon, cloud: sky.cloud, cloudShade: sky.cloudShade, night: sky.night }), [sky]);
-  // A few students walking the campus on their own, between real places, along real paths.
+  // Students walking the campus on their own, between real places, along the side of real roads. Each has a name,
+  // a pace and a side of the road; they wave when you come close, answer your emotes, and stop to say hello.
   const walkers = useMemo(() => {
     const ids = Object.keys(world.places);
     let seed = 5;
     const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    return Array.from({ length: 6 }, (_, i) => {
+    return Array.from({ length: CROWD_SIZE }, (_, i) => {
       const start = world.places[ids[Math.floor(rnd() * ids.length)]!]!.door;
       const outfit = Object.fromEntries((Object.keys(OUTFIT_SIZES) as (keyof Outfit)[]).map((k) => [k, Math.floor(rnd() * OUTFIT_SIZES[k])])) as Outfit;
-      return { i, outfit, pos: { x: start[0] + 3, z: start[1] + 3 }, route: [] as XZ[], heading: 0, wait: rnd() * 3, anim: { current: newAnim() } };
+      return {
+        i,
+        name: CROWD_NAMES[i % CROWD_NAMES.length]!,
+        outfit,
+        pos: { x: start[0] + 3, z: start[1] + 3 },
+        route: [] as XZ[],
+        to: "",
+        heading: rnd() * 6.28,
+        pace: 1.5 + rnd() * 0.9,
+        side: (rnd() > 0.5 ? 1 : -1) * (1.6 + rnd() * 1.2),
+        wait: rnd() * 3,
+        stop: 0,
+        waved: -99,
+        anim: { current: newAnim() },
+      };
     });
   }, [world]);
   const walkerRefs = useRef(new Map<number, THREE.Group>());
   const placeIds = useMemo(() => Object.keys(world.places), [world]);
   const camPos = useRef(new THREE.Vector3());
   const lastNear = useRef<string>("");
+  const lastWalker = useRef<string>("");
   const frame = useRef(0);
   const occlusion = useRef(1);
 
@@ -360,40 +381,88 @@ export function Scene({
     }
 
     // ── Students walking about ──
+    const now = performance.now() / 1000;
+    const emoted = g.crowd.emoteAt > 0 && now - g.crowd.emoteAt < 0.2;
+    let nearWalker: number | null = null;
+    let nearWD = 3.2;
     for (const w of walkers) {
       const grp = walkerRefs.current.get(w.i);
-      if (!w.route.length) {
-        w.anim.current.speed = 0;
+      const a = w.anim.current;
+      const toYou = Math.hypot(g.pos.x - w.pos.x, g.pos.z - w.pos.z);
+      if (toYou < nearWD && !nearPerson) {
+        nearWD = toYou;
+        nearWalker = w.i;
+      }
+      // Said hello to (E), or you came close for the first time in a while: stop, turn to you, wave.
+      if (g.crowd.greet === w.i || (toYou < 4.5 && now - w.waved > 25)) {
+        w.waved = now;
+        w.stop = g.crowd.greet === w.i ? 3.5 : 1.6;
+        a.wave = 1.3;
+        a.talk = g.crowd.greet === w.i ? 1.5 : 0;
+        if (g.crowd.greet === w.i) g.crowd.greet = null;
+      }
+      if (emoted && toYou < 16) a.wave = 1.4;
+      if (w.stop > 0) {
+        w.stop -= dt;
+        a.speed = 0;
+        let dh = Math.atan2(g.pos.x - w.pos.x, g.pos.z - w.pos.z) - w.heading;
+        while (dh > Math.PI) dh -= Math.PI * 2;
+        while (dh < -Math.PI) dh += Math.PI * 2;
+        w.heading += dh * Math.min(1, dt * 6);
+      } else if (!w.route.length) {
+        a.speed = 0;
         w.wait -= dt;
-        if (w.wait <= 0 && frame.current % 6 === w.i) {
-          const to = world.places[placeIds[Math.floor(Math.random() * placeIds.length)]!]!.door;
+        if (w.wait <= 0 && frame.current % CROWD_SIZE === w.i) {
+          const id = placeIds[Math.floor(Math.random() * placeIds.length)]!;
+          const to = world.places[id]!.door;
+          w.to = id;
           w.route = paths.route([w.pos.x, w.pos.z], [to[0] + 2, to[1] + 2]);
           w.wait = 2 + Math.random() * 6;
         }
       } else {
-        const [tx2, tz2] = w.route[0]!;
+        // Keep to one side of the road: aim a little to the side of each point on the way.
+        const [px, pz] = w.route[0]!;
+        const ex = px - w.pos.x;
+        const ez = pz - w.pos.z;
+        const d = Math.hypot(ex, ez);
+        const last = w.route.length === 1;
+        const tx2 = last ? px : px + (ez / (d || 1)) * w.side;
+        const tz2 = last ? pz : pz - (ex / (d || 1)) * w.side;
         const dx = tx2 - w.pos.x;
         const dz = tz2 - w.pos.z;
-        const d = Math.hypot(dx, dz);
-        if (d < 1) w.route.shift();
+        if (Math.hypot(dx, dz) < 1.2 || d < 1) w.route.shift();
         else {
-          const h = Math.atan2(dx, dz);
-          let dh = h - w.heading;
+          let dh = Math.atan2(dx, dz) - w.heading;
           while (dh > Math.PI) dh -= Math.PI * 2;
           while (dh < -Math.PI) dh += Math.PI * 2;
-          w.heading += dh * Math.min(1, dt * 6);
-          const [rx, rz] = collider.resolve(w.pos.x + Math.sin(w.heading) * 3.2 * dt, w.pos.z + Math.cos(w.heading) * 3.2 * dt, 0.5);
-          if (Math.hypot(rx - w.pos.x, rz - w.pos.z) < 0.01) w.route.shift();
+          w.heading += dh * Math.min(1, dt * 5);
+          // Make way for you: slow down when you're right in front.
+          const v = w.pace * (toYou < 1.6 ? 0.25 : 1);
+          const [rx, rz] = collider.resolve(w.pos.x + Math.sin(w.heading) * v * dt, w.pos.z + Math.cos(w.heading) * v * dt, 0.45);
+          if (Math.hypot(rx - w.pos.x, rz - w.pos.z) < v * dt * 0.1) w.route.shift();
           w.pos.x = rx;
           w.pos.z = rz;
-          w.anim.current.speed = 3.2;
+          a.speed = v;
         }
       }
+      a.look = toYou < 12 && w.stop <= 0 ? Math.max(-1, Math.min(1, (() => {
+        let r = Math.atan2(g.pos.x - w.pos.x, g.pos.z - w.pos.z) - w.heading;
+        while (r > Math.PI) r -= Math.PI * 2;
+        while (r < -Math.PI) r += Math.PI * 2;
+        return Math.abs(r) < 1.6 ? r : 0;
+      })())) : 0;
       if (grp) {
-        grp.visible = Math.hypot(w.pos.x - g.pos.x, w.pos.z - g.pos.z) < 170;
+        grp.visible = toYou < 150;
         grp.position.set(w.pos.x, 0, w.pos.z);
         grp.rotation.y = w.heading;
       }
+    }
+    const nw = nearWalker === null ? null : walkers[nearWalker]!;
+    const walkerKey = nw ? `${nw.i}:${nw.to}` : "";
+    if (walkerKey !== lastWalker.current) {
+      lastWalker.current = walkerKey;
+      g.crowd.near = nearWalker;
+      onWalker(nw ? { i: nw.i, name: nw.name, to: nw.to } : null);
     }
 
     // ── Way-finding: a light column over the next stop, and an arrow at your feet ──

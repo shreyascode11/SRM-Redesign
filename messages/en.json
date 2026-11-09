@@ -61,7 +61,9 @@
     "patents": "Patents",
     "compare": "Compare programmes",
     "allStories": "All stories and alumni",
-    "walk": "Walk the campus (3D)"
+    "walk": "Walk the campus (3D)",
+    "play": "Play 3D",
+    "playLong": "Play: walk the campus in 3D"
   },
   "Footer": {
     "label": "Footer",
@@ -1586,7 +1588,12 @@
       "speed": "Walking speed",
       "speedNormal": "Normal",
       "speedFast": "Fast",
-      "speedTurbo": "Turbo"
+      "speedTurbo": "Turbo",
+      "crowdSay": "Say hi to {name}",
+      "crowdHi1": "Hi! I'm heading to {place}.",
+      "crowdHi2": "Hey! Off to {place}, see you around.",
+      "crowdHi3": "Vanakkam! Going to {place}, want to come along?",
+      "crowdSomewhere": "class"
     },
     "kinds": {
       "arrival": "Getting here",
@@ -1601,7 +1608,10 @@
       "hostel": "Hostel",
       "faith": "Place of worship",
       "park": "Park",
-      "landmark": "Landmark"
+      "landmark": "Landmark",
+      "homes": "Homes",
+      "shop": "Shop",
+      "other": "Campus building"
     },
     "items": {
       "coffee": "a filter coffee",
@@ -1924,7 +1934,9 @@
       "title": "Walk Kattankulathur in 3D",
       "text": "Arrive at the gate, walk the real campus, talk to people at real buildings and take six small quests. About 10 minutes.",
       "cta": "Start walking",
-      "hostel": "Walk to your hostel in 3D"
+      "hostel": "Walk to your hostel in 3D",
+      "heroCta": "Walk the campus in 3D",
+      "imageAlt": "A student at the SRM arch gate in Walk SRM, the 3D campus game"
     }
   }
 }
