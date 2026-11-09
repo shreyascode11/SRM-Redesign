@@ -8,3 +8,8 @@ out
 .DS_Store
 .claude
 *.tsbuildinfo
+
+# Raw footage and downloaded packs: not part of the site
+IMG_*.MOV
+*.zip
+WhatsApp Video*
