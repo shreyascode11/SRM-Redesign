@@ -19,6 +19,27 @@ function skyFor(h: number): Sky {
   return { fog: "#34436a", sun: "#cdd8ff", sunI: 0.9, hemiTop: "#9fb3e0", hemiBottom: "#3a4a5a", hemiI: 0.9, night: 1, top: "#17213d", horizon: "#3a4c78", cloud: "#5a6a92", cloudShade: "#36436a" };
 }
 
+/**
+ * Props for a game button that works while another finger is on the thumb stick. iOS sends no click for a second
+ * finger while the first is still down, so on touch it fires on pointerdown (and swallows the click that may follow);
+ * mouse and keyboard use the ordinary click.
+ */
+const tap = (fn: () => void) => ({
+  onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    e.preventDefault();
+    e.currentTarget.dataset.tapped = "1";
+    fn();
+  },
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.currentTarget.dataset.tapped) {
+      delete e.currentTarget.dataset.tapped;
+      return;
+    }
+    fn();
+  },
+});
+
 const QUALITY_DPR = { auto: [1, 1.6], low: [0.7, 0.85], high: [1.5, 2] } as const;
 
 export default function WalkGame({ script, onExit, startWithOutfit }: { script: WalkScript; onExit: () => void; startWithOutfit: boolean }) {
@@ -31,6 +52,20 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const [near, setNear] = useState<{ person: string | null; place: string | null }>({ person: null, place: null });
   const [talk, setTalk] = useState<Talk | null>(null);
   const [walker, setWalker] = useState<{ i: number; name: string; to: string } | null>(null);
+  // The "Next stop" banner can be folded away on a small screen (remembered for this visit).
+  const [bannerHidden, setBannerHidden] = useState(() => {
+    try {
+      return sessionStorage.getItem("srm-walk-banner") === "hidden";
+    } catch {
+      return false;
+    }
+  });
+  const toggleBanner = (hidden: boolean) => {
+    setBannerHidden(hidden);
+    try {
+      sessionStorage.setItem("srm-walk-banner", hidden ? "hidden" : "shown");
+    } catch {}
+  };
   const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish">(startWithOutfit ? "outfit" : null);
   const [toast, setToast] = useState<string | null>(null);
   const [quality, setQuality] = useState<"auto" | "low" | "high">("auto");
@@ -478,12 +513,33 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               </div>
             </div>
 
-            {/* Next stop and what you're carrying */}
+            {/* Next stop and what you're carrying. It can be folded into a small pill, so it never hides the game. */}
             {targetInfo && !talk ? (
-              <p aria-live="polite" className="pointer-events-none absolute top-16 left-3 max-w-[calc(100vw-10rem)] rounded-2xl bg-[#14101a]/80 px-4 py-2 text-left text-sm sm:top-3 sm:left-1/2 sm:w-max sm:max-w-[min(32rem,52vw)] sm:-translate-x-1/2 sm:text-center font-semibold text-white backdrop-blur">
-                <span className="text-[#ffd166]">{ui.target}:</span> {targetInfo.hint}
-                {held.length ? <span className="block text-xs font-normal text-white/80">{ui.carrying}: {held.map((i) => script.items[i]).join(", ")}</span> : null}
-              </p>
+              bannerHidden ? (
+                <button
+                  type="button"
+                  onClick={() => toggleBanner(false)}
+                  className="pointer-events-auto absolute top-16 left-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#14101a]/80 px-4 text-sm font-semibold text-white backdrop-blur sm:top-3 sm:left-1/2 sm:-translate-x-1/2"
+                >
+                  <span aria-hidden="true">🎯</span>
+                  {ui.showTarget}
+                </button>
+              ) : (
+                <div className="pointer-events-none absolute top-16 left-3 flex max-w-[calc(100vw-9rem)] items-start gap-1 rounded-2xl bg-[#14101a]/80 py-2 pr-1 pl-4 text-left text-sm font-semibold text-white backdrop-blur sm:top-3 sm:left-1/2 sm:w-max sm:max-w-[min(34rem,56vw)] sm:-translate-x-1/2">
+                  <p aria-live="polite" className="py-0.5">
+                    <span className="text-[#ffd166]">{ui.target}:</span> {targetInfo.hint}
+                    {held.length ? <span className="block text-xs font-normal text-white/80">{ui.carrying}: {held.map((i) => script.items[i]).join(", ")}</span> : null}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => toggleBanner(true)}
+                    className="pointer-events-auto -my-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-lg leading-none text-white/80 hover:bg-white/10 hover:text-white"
+                  >
+                    <span aria-hidden="true">×</span>
+                    <span className="sr-only">{ui.hideTarget}</span>
+                  </button>
+                </div>
+              )
             ) : null}
             {toast ? (
               <p role="status" className="walk-toast absolute top-40 left-3 max-w-[calc(100vw-10rem)] rounded-2xl sm:top-20 sm:left-1/2 sm:w-max sm:max-w-[60vw] sm:-translate-x-1/2 bg-[#ffd166] px-5 py-2 text-center font-bold text-black shadow-xl">
@@ -501,33 +557,39 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                 ) : null}
                 <div className="flex flex-col items-end gap-2">
                   {near.person || pickHere || walker ? (
-                    <button type="button" onClick={action} className="walk-act pointer-events-auto inline-flex min-h-14 items-center gap-2 rounded-full bg-[#ffd166] px-6 text-lg font-bold text-black shadow-xl">
+                    <button type="button" {...tap(action)} className="walk-act walk-tap pointer-events-auto inline-flex min-h-14 items-center gap-2 rounded-full bg-[#ffd166] px-6 text-lg font-bold text-black shadow-xl">
                       {near.person ? `💬 ${ui.talk}` : walker && !pickHere ? `👋 ${fmt(ui.crowdSay!, { name: walker.name })}` : `📦 ${fmt(ui.pick!, { item: script.items[pickHere!.item] ?? "" })}`}
                       <kbd className="hidden rounded bg-black/15 px-1.5 text-xs sm:inline">E</kbd>
                     </button>
                   ) : null}
-                  <div className="flex gap-2">
+                  {/* Phones: round thumb buttons that fire the moment a finger lands, so they work while the other thumb
+                      is on the stick; they sit clear of it. Wider screens: labelled pills with their keys. */}
+                  <div className="flex items-end gap-2">
                     <button
                       type="button"
                       aria-pressed={running}
-                      onClick={() => setRunning((v) => !v)}
-                      className={`${hudBtn} pointer-events-auto min-h-12 gap-1.5 px-4 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}
+                      {...tap(() => setRunning((v) => !v))}
+                      className={`${hudBtn} walk-tap pointer-events-auto size-14 gap-1.5 aria-pressed:bg-[#ffd166] aria-pressed:text-black sm:size-auto sm:min-h-12 sm:px-4`}
                     >
-                      <span aria-hidden="true">{running ? "🏃" : "🚶"}</span>
-                      <span className="text-sm font-bold">{running ? ui.run : ui.walkMode}</span>
+                      <span aria-hidden="true" className="text-xl sm:text-base">
+                        {running ? "🏃" : "🚶"}
+                      </span>
+                      <span className="sr-only text-sm font-bold sm:not-sr-only">{running ? ui.run : ui.walkMode}</span>
                       <kbd className="hidden rounded bg-white/15 px-1.5 text-xs sm:inline">R</kbd>
                     </button>
-                    <button type="button" onClick={() => jump(game.current)} className={`${hudBtn} pointer-events-auto min-h-12 gap-1.5 px-4`}>
-                      <span aria-hidden="true">⤒</span>
-                      <span className="text-sm font-bold">{ui.jump}</span>
+                    <button type="button" {...tap(() => jump(game.current))} className="walk-tap pointer-events-auto inline-flex size-16 items-center justify-center gap-1.5 rounded-full bg-[#ffd166] text-sm font-semibold text-black shadow-lg focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white sm:size-auto sm:min-h-12 sm:min-w-11 sm:px-4">
+                      <span aria-hidden="true" className="text-2xl sm:text-base">
+                        ⤒
+                      </span>
+                      <span className="sr-only text-sm font-bold sm:not-sr-only">{ui.jump}</span>
                       <kbd className="hidden rounded bg-white/15 px-1.5 text-xs sm:inline">Space</kbd>
                     </button>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setPanel("emote")} className={`${hudBtn} pointer-events-auto size-12`}>
+                    <button type="button" {...tap(() => setPanel("emote"))} className={`${hudBtn} walk-tap pointer-events-auto size-12`}>
                       😊<span className="sr-only">{ui.emote}</span>
                     </button>
-                    <button type="button" onClick={() => setPanel("outfit")} className={`${hudBtn} pointer-events-auto size-12`}>
+                    <button type="button" {...tap(() => setPanel("outfit"))} className={`${hudBtn} walk-tap pointer-events-auto size-12`}>
                       👕<span className="sr-only">{ui.outfit}</span>
                     </button>
                   </div>

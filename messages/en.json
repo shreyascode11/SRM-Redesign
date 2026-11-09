@@ -1543,7 +1543,9 @@
       "crowdHi1": "Hi! I'm heading to {place}.",
       "crowdHi2": "Hey! Off to {place}, see you around.",
       "crowdHi3": "Vanakkam! Going to {place}, want to come along?",
-      "crowdSomewhere": "class"
+      "crowdSomewhere": "class",
+      "hideTarget": "Hide the next stop",
+      "showTarget": "Next stop"
     },
     "kinds": {
       "arrival": "Getting here",

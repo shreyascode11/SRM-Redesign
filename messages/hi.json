@@ -1543,7 +1543,9 @@
       "crowdHi1": "नमस्ते! मैं {place} जा रहा/रही हूँ।",
       "crowdHi2": "हाय! {place} जा रहा/रही हूँ, फिर मिलते हैं।",
       "crowdHi3": "वणक्कम! {place} जा रहा/रही हूँ, साथ चलोगे?",
-      "crowdSomewhere": "क्लास"
+      "crowdSomewhere": "क्लास",
+      "hideTarget": "अगला पड़ाव छिपाएँ",
+      "showTarget": "अगला पड़ाव"
     },
     "kinds": {
       "arrival": "यहाँ पहुँचना",

@@ -1551,3 +1551,11 @@ html[data-intro="on"] .grail-intro {
     scale: 1.05;
   }
 }
+
+/* Walk SRM thumb buttons: no double-tap zoom, no text selection or grey flash under a thumb. */
+.walk-tap {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}

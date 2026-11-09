@@ -1543,7 +1543,9 @@
       "crowdHi1": "வணக்கம்! நான் {place} போகிறேன்.",
       "crowdHi2": "ஹாய்! {place} போகிறேன், பிறகு பார்ப்போம்.",
       "crowdHi3": "வணக்கம்! {place} போகிறேன், நீயும் வருகிறாயா?",
-      "crowdSomewhere": "வகுப்பு"
+      "crowdSomewhere": "வகுப்பு",
+      "hideTarget": "அடுத்த இடத்தை மறை",
+      "showTarget": "அடுத்த இடம்"
     },
     "kinds": {
       "arrival": "வந்து சேர",
