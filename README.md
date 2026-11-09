@@ -9,7 +9,7 @@ SRM's own published data.
 
 ![The homepage: "Level Up at SRM", a turning helix of real student quests around SRM's emblem](docs/images/home.jpg)
 
-> An independent project by [Shreyas](https://github.com/shreyascode11), not the official SRM website. Fees, dates and
+> An independent project made by Shreyas, Tulsi and Arnadeep; not the official SRM website. Fees, dates and
 > rankings come from SRM's published pages; always confirm admissions details with SRM.
 
 ---
@@ -201,7 +201,7 @@ docs/               audit results, design reference, README images
 
 ## Credits
 
-**Design and development: Shreyas** · [github.com/shreyascode11](https://github.com/shreyascode11)
+**Made by Shreyas, Tulsi and Arnadeep.**
 
 The SRM name, logo, emblem and photographs belong to SRM Institute of Science and Technology and are used only in this
 concept redesign. Map data © OpenStreetMap contributors (ODbL). The homepage's structure and motion take their cue from
