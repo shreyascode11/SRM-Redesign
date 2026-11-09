@@ -503,7 +503,12 @@ export function EmoteWheel({ script, onPick, onClose }: { script: WalkScript; on
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => first.current?.focus(), []);
   return (
-    <div role="group" aria-label={script.ui.emote} className={`${glass} fixed right-3 bottom-24 z-30 grid grid-cols-5 gap-1 p-2`} onKeyDown={(e) => e.key === "Escape" && onClose()}>
+    <div role="group" aria-label={script.ui.emote} className={`${glass} fixed right-3 bottom-24 z-30 grid grid-cols-5 gap-1 p-2`} onKeyDown={(e) => {
+        // Close this panel only: the game's own Escape (open the pause menu) must not also run.
+        if (e.key !== "Escape") return;
+        e.stopPropagation();
+        onClose();
+      }}>
       {EMOTES.map(([id, glyph], i) => (
         <button
           key={id}
@@ -529,7 +534,12 @@ function Panel({ title, onClose, closeLabel, wide, children }: { title: string; 
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      onKeyDown={(e) => {
+        // Close this panel only: the game's own Escape (open the pause menu) must not also run.
+        if (e.key !== "Escape") return;
+        e.stopPropagation();
+        onClose();
+      }}
       className={`${glass} fixed inset-3 z-40 mx-auto my-auto h-fit max-h-[calc(100svh-1.5rem)] overflow-y-auto p-4 sm:p-6 ${wide ? "max-w-3xl" : "max-w-lg"}`}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
