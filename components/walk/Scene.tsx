@@ -264,7 +264,9 @@ export function Scene({
       }
     }
     const len = Math.hypot(mx, mz);
-    const runOn = g.run || g.keys.has("shift") || Math.hypot(g.joy.x, g.joy.y) > 0.92 || (g.route.length > 0 && routeLength(g) > 40);
+    // Run only when you ask to: the Run button (or R), or Shift held. A full thumb stick or a long tap-to-walk route
+    // walks; they used to switch to running on their own, so on a phone walking and running felt the same.
+    const runOn = g.run || g.keys.has("shift");
     const want = len > 0.05 ? (runOn ? RUN : WALK) * g.pace * Math.min(1, len) : 0;
     g.speed += (want - g.speed) * Math.min(1, dt * (want > g.speed ? 6 : 10));
     if (len > 0.05) {
@@ -593,14 +595,3 @@ export function Scene({
   );
 }
 
-function routeLength(g: Game) {
-  let d = 0;
-  let px = g.pos.x;
-  let pz = g.pos.z;
-  for (const [x, z] of g.route) {
-    d += Math.hypot(x - px, z - pz);
-    px = x;
-    pz = z;
-  }
-  return d;
-}
