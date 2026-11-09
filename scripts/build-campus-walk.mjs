@@ -31,8 +31,13 @@ const LAT0 = 12.8222;
 const LON0 = 80.0437;
 const BOX = { south: 12.8168, north: 12.8268, west: 80.0372, east: 80.0505 };
 const PAD = 0.0015; // roads are kept a little beyond the box so they don't stop dead at the edge
-const MX = Math.cos((LAT0 * Math.PI) / 180) * 111320;
-const MZ = 110540;
+// The campus is drawn at 0.65 of its real size, so walking between buildings takes a game's time, not a real
+// walk's. Footprints and distances shrink together (keeping buildings full size would put them on the roads);
+// heights, people, trees and furniture stay real size, and roads shrink a little less (ROAD_SCALE).
+const SCALE = 0.65;
+const ROAD_SCALE = 0.8;
+const MX = Math.cos((LAT0 * Math.PI) / 180) * 111320 * SCALE;
+const MZ = 110540 * SCALE;
 const r = (n) => Math.round(n * 2) / 2;
 const toXZ = (p) => [r((p.lon - LON0) * MX), r(-(p.lat - LAT0) * MZ)];
 const inBox = (p, pad = 0) => p.lat >= BOX.south - pad && p.lat <= BOX.north + pad && p.lon >= BOX.west - pad && p.lon <= BOX.east + pad;
@@ -90,6 +95,7 @@ const buildings = [];
 const buildingByOsmId = new Map(); // OSM way id → index, for places OSM doesn't name (content/walk.json "osmId")
 const osmNames = []; // [name, x, z, tags] for every named building or node, to find places by name
 const roads = [];
+const roundabouts = new Map(); // OSM way id → { p, w }, for landmarks on traffic islands (content/walk.json "roundabout")
 const water = [];
 const green = [];
 for (const e of elements) {
@@ -123,7 +129,9 @@ for (const e of elements) {
     }
   } else if (t.highway) {
     const foot = ["footway", "path", "steps", "pedestrian", "cycleway", "corridor"].includes(t.highway);
-    const w = foot ? 2.5 : ({ trunk: 16, trunk_link: 8, primary: 12, secondary: 10, tertiary: 8, residential: 6, unclassified: 6, living_street: 5, service: 4.5, road: 6 }[t.highway] ?? 4);
+    const real = foot ? 2.5 : ({ trunk: 16, trunk_link: 8, primary: 12, secondary: 10, tertiary: 8, residential: 6, unclassified: 6, living_street: 5, service: 4.5, road: 6 }[t.highway] ?? 4);
+    const w = Math.round(real * ROAD_SCALE * 2) / 2;
+    if (t.junction === "roundabout") roundabouts.set(e.id, { p: closeRing(e.geometry.map(toXZ)), w });
     for (const run of clipLine(e.geometry)) roads.push(foot ? { p: run, w, f: 1 } : { p: run, w });
   } else if (t.natural === "water") {
     const pts = closeRing(e.geometry.map(toXZ));
@@ -197,6 +205,7 @@ const doorOf = (poly, toward) => {
 const places = {};
 const missing = [];
 for (const pl of walk.places) {
+  if (pl.roundabout) continue; // built below
   // A building OSM maps but doesn't name (the CRC Block): matched by its OSM way id.
   if (pl.osmId !== undefined) {
     const bi = buildingByOsmId.get(pl.osmId);
@@ -236,44 +245,84 @@ for (const pl of walk.places) {
   places[pl.id] = { x: r(n.x), z: r(n.z), door, ...(bi >= 0 ? { b: bi } : {}) };
 }
 
-// A clock tower beside a building's entrance (content/walk.json "clockTower"): a 7 m square standing out from the
-// entrance wall, near one end of it, 13 m taller than the building. Its own footprint, so you can't walk through it.
-for (const pl of walk.places.filter((x) => x.clockTower)) {
+// A landmark on a traffic island (content/walk.json "roundabout": the OSM way of the roundabout): the island is its
+// footprint (so you walk round it, not through it); its "door" is on the far side of the ring road, facing "face".
+for (const pl of walk.places.filter((x) => x.roundabout)) {
+  const ring = roundabouts.get(pl.roundabout);
+  if (!ring) {
+    missing.push(pl.id);
+    continue;
+  }
+  const c = ring.p.reduce((s, q) => [s[0] + q[0] / ring.p.length, s[1] + q[1] / ring.p.length], [0, 0]);
+  const R = ring.p.reduce((s, q) => s + Math.hypot(q[0] - c[0], q[1] - c[1]), 0) / ring.p.length;
+  const island = Math.max(3.5, R - ring.w / 2 - 0.4);
+  const poly = Array.from({ length: 16 }, (_, i) => [r(c[0] + Math.cos((i / 16) * Math.PI * 2) * island), r(c[1] + Math.sin((i / 16) * Math.PI * 2) * island)]);
+  buildings.push({ p: poly, h: 15, k: KIND[pl.kind] ?? 0, n: pl.id });
+  const toward = places[pl.face] ?? { x: c[0] - 1, z: c[1] };
+  const dx = toward.x - c[0];
+  const dz = toward.z - c[1];
+  const d = Math.hypot(dx, dz) || 1;
+  const out = R + ring.w / 2 + 2.5;
+  places[pl.id] = { x: r(c[0]), z: r(c[1]), door: [r(c[0] + (dx / d) * out), r(c[1] + (dz / d) * out)], b: buildings.length - 1, island: r(island * 10) / 10 };
+}
+
+// The arch gate (content/walk.json "archGate"): the campus entrance is a divided avenue, two one-way roads side by
+// side, and the gate stands across both, one arch over each. Its piers are footprints, so you walk through the arches.
+let gate = null;
+for (const pl of walk.places.filter((x) => x.archGate)) {
   const P = places[pl.id];
   if (!P) continue;
-  const bb = buildings[P.b];
-  let best = 0;
-  let bd = Infinity;
-  bb.p.forEach((a, i) => {
-    const c = bb.p[(i + 1) % bb.p.length];
-    const d = Math.hypot((a[0] + c[0]) / 2 - P.door[0], (a[1] + c[1]) / 2 - P.door[1]);
-    if (d < bd) {
-      bd = d;
-      best = i;
+  const ends = [];
+  for (const rd of roads) {
+    if (rd.f) continue;
+    for (const [i, j] of [[0, 1], [rd.p.length - 1, rd.p.length - 2]]) {
+      const a = rd.p[i];
+      const b = rd.p[j];
+      if (Math.hypot(a[0] - P.x, a[1] - P.z) > 12) continue;
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      ends.push({ a, u: [(b[0] - a[0]) / L, (b[1] - a[1]) / L], w: rd.w });
     }
-  });
-  const a = bb.p[best];
-  const c = bb.p[(best + 1) % bb.p.length];
-  const len = Math.hypot(c[0] - a[0], c[1] - a[1]);
-  const ux = (c[0] - a[0]) / len;
-  const uz = (c[1] - a[1]) / len;
-  let nx = uz;
-  let nz = -ux;
-  if (inside((a[0] + c[0]) / 2 + nx, (a[1] + c[1]) / 2 + nz, bb.p)) {
-    nx = -nx;
-    nz = -nz;
   }
-  const t = Math.min(len * 0.22, len / 2 - 6);
-  const s = 3.5;
-  const cx = a[0] + ux * t + nx * (s + 0.2);
-  const cz = a[1] + uz * t + nz * (s + 0.2);
-  const sq = [
-    [cx - ux * s - nx * s, cz - uz * s - nz * s],
-    [cx + ux * s - nx * s, cz + uz * s - nz * s],
-    [cx + ux * s + nx * s, cz + uz * s + nz * s],
-    [cx - ux * s + nx * s, cz - uz * s + nz * s],
-  ].map(([x, z]) => [r(x), r(z)]);
-  buildings.push({ p: sq, h: bb.h + 13, k: 8, n: `${pl.id}-tower` });
+  let pair = null;
+  for (let i = 0; i < ends.length; i++)
+    for (let j = i + 1; j < ends.length; j++) {
+      const dot = ends[i].u[0] * ends[j].u[0] + ends[i].u[1] * ends[j].u[1];
+      if (dot > 0.95 && (!pair || dot > pair.dot)) pair = { e: [ends[i], ends[j]], dot };
+    }
+  if (!pair) continue;
+  const [e1, e2] = pair.e;
+  let ux = e1.u[0] + e2.u[0];
+  let uz = e1.u[1] + e2.u[1];
+  const ul = Math.hypot(ux, uz);
+  ux /= ul;
+  uz /= ul;
+  const inset = 9;
+  const cx = (e1.a[0] + e2.a[0]) / 2 + ux * inset;
+  const cz = (e1.a[1] + e2.a[1]) / 2 + uz * inset;
+  // Across the avenue (local x) and how far apart the two roads are.
+  const vx = uz;
+  const vz = -ux;
+  const span = Math.max(8.2, Math.abs((e2.a[0] - e1.a[0]) * vx + (e2.a[1] - e1.a[1]) * vz));
+  const A = 5.4;
+  const pier = 4.6;
+  const W = span + A + 2 * pier;
+  gate = { x: r(cx * 10) / 10, z: r(cz * 10) / 10, ry: Math.round(Math.atan2(ux, uz) * 1000) / 1000, span: r(span * 10) / 10 };
+  const rect = (x0, x1, z0, z1) =>
+    [
+      [x0, z0],
+      [x1, z0],
+      [x1, z1],
+      [x0, z1],
+    ].map(([a, b]) => [r(cx + vx * a + ux * b), r(cz + vz * a + uz * b)]);
+  buildings.push({ p: rect(-W / 2, -W / 2 + pier, -1.8, 1.8), h: 1, k: 0, n: "gate-pier" });
+  buildings.push({ p: rect(W / 2 - pier, W / 2, -1.8, 1.8), h: 1, k: 0, n: "gate-pier" });
+  buildings.push({ p: rect(-(span - A) / 2, (span - A) / 2, -1.5, 1.5), h: 1, k: 0, n: "gate-pier" });
+  // The statue on its round pedestal, out in front between the two roads.
+  buildings.push({ p: rect(-0.9, 0.9, -7.9, -6.1), h: 1, k: 0, n: "gate-statue" });
+  // Arrive just outside the gate, looking through it.
+  P.door = [r(cx - ux * 15 + vx * (span / 2)), r(cz - uz * 15 + vz * (span / 2))];
+  P.x = P.door[0];
+  P.z = P.door[1];
 }
 
 // Two places on one building (library, University Building) must not share a door: nudge the second along the wall.
@@ -290,7 +339,7 @@ const nearRoad = (x, z) =>
   roads.some(({ p, w }) => p.some((a, i) => i < p.length - 1 && Math.hypot(...[x, z].map((v, k) => v - closestOnSeg(x, z, a, p[i + 1])[k])) < w / 2 + 3));
 const bounds = { minX: r((BOX.west - LON0) * MX), maxX: r((BOX.east - LON0) * MX), minZ: r(-(BOX.north - LAT0) * MZ), maxZ: r(-(BOX.south - LAT0) * MZ) };
 const trees = [];
-for (let tries = 0; trees.length < 1100 && tries < 40000; tries++) {
+for (let tries = 0; trees.length < 850 && tries < 40000; tries++) {
   const x = bounds.minX + rand() * (bounds.maxX - bounds.minX);
   const z = bounds.minZ + rand() * (bounds.maxZ - bounds.minZ);
   if (buildings.some((b) => inside(x, z, b.p)) || water.some((w) => inside(x, z, w.p)) || nearRoad(x, z)) continue;
@@ -312,7 +361,7 @@ for (const n of osmNames.filter((x) => x.tags.highway === "bus_stop" && x.buildi
   stops.push(d < 6 ? [r(q[0] + (dx / d) * 6), r(q[1] + (dz / d) * 6)] : xz);
 }
 
-const out = { origin: [LAT0, LON0], bounds, spawn: walk.spawn, buildings, roads, water, green, trees, stops, places };
+const out = { origin: [LAT0, LON0], scale: SCALE, bounds, spawn: walk.spawn, buildings, roads, water, green, trees, stops, places, ...(gate ? { gate } : {}) };
 mkdirSync(new URL("../public/walk/", import.meta.url), { recursive: true });
 writeFileSync(new URL("../public/walk/ktr-world.json", import.meta.url), JSON.stringify(out));
 console.log(

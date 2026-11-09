@@ -420,7 +420,7 @@ export function MapPanel({
 
 // ─────────────────────────── Character configuration ───────────────────────────
 
-const CATS: (keyof Outfit)[] = ["body", "hair", "hairColor", "skin", "top", "bottom", "shoes", "bag"];
+const CATS: (keyof Outfit)[] = ["hair", "hairColor", "skin", "top", "bottom", "shoes", "bag"];
 const swatch = (cat: keyof Outfit, i: number): string | null =>
   cat === "skin"
     ? PALETTE.skin[i]!
@@ -549,6 +549,8 @@ export function PauseMenu({
   onQuality,
   light,
   onLight,
+  pace,
+  onPace,
   onResume,
   onExit,
 }: {
@@ -557,6 +559,8 @@ export function PauseMenu({
   onQuality: (q: "auto" | "low" | "high") => void;
   light: "live" | "day";
   onLight: (l: "live" | "day") => void;
+  pace: number;
+  onPace: (p: number) => void;
   onResume: () => void;
   onExit: () => void;
 }) {
@@ -585,6 +589,22 @@ export function PauseMenu({
           {(["live", "day"] as const).map((l) => (
             <button key={l} type="button" aria-pressed={light === l} onClick={() => onLight(l)} className={`${darkBtn} border border-white/20 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}>
               {l === "live" ? ui.lightLive : ui.lightDay}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="mt-5">
+        <legend className="text-sm font-semibold text-white/70 uppercase">{ui.speed}</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(
+            [
+              [1, ui.speedNormal],
+              [1.3, ui.speedFast],
+              [1.6, ui.speedTurbo],
+            ] as const
+          ).map(([v, label]) => (
+            <button key={v} type="button" aria-pressed={pace === v} onClick={() => onPace(v)} className={`${darkBtn} border border-white/20 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}>
+              {label}
             </button>
           ))}
         </div>

@@ -12,7 +12,7 @@ import type { Locale } from "@/lib/i18n";
  * The game itself only renders this; it never makes up a fact.
  */
 
-export type Outfit = { body: number; skin: number; hair: number; hairColor: number; top: number; bottom: number; shoes: number; bag: number };
+export type Outfit = { skin: number; hair: number; hairColor: number; top: number; bottom: number; shoes: number; bag: number };
 export type WalkPlace = { id: string; name: string; kind: string; kindLabel: string; href?: string; photo?: string; credit?: string };
 export type WalkTopic = { id: string; q: string; a: string; link?: { label: string; href: string } };
 export type WalkPerson = { id: string; at: string; name: string; greet: string; topics: WalkTopic[]; outfit: Outfit };

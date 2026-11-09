@@ -1534,7 +1534,7 @@
       "carrying": "Carrying",
       "questDone": "Quest complete: {title}",
       "newQuest": "New quest: {title}",
-      "keys": "WASD or arrow keys to walk · Shift to run · E to talk · Q emote · M map · Esc pause",
+      "keys": "WASD or arrow keys to walk · Shift (or R) to run · Space to jump · E to talk · Q emote · M map · Esc pause",
       "touch": "Drag the stick or tap the ground to walk",
       "walkThere": "Walk there",
       "jumpThere": "Jump there",
@@ -1579,7 +1579,14 @@
       "minimap": "Map of the campus",
       "light": "Light",
       "lightLive": "Chennai time",
-      "lightDay": "Always day"
+      "lightDay": "Always day",
+      "jump": "Jump",
+      "run": "Run",
+      "walkMode": "Walk",
+      "speed": "Walking speed",
+      "speedNormal": "Normal",
+      "speedFast": "Fast",
+      "speedTurbo": "Turbo"
     },
     "kinds": {
       "arrival": "Getting here",
@@ -1593,7 +1600,8 @@
       "health": "Hospital",
       "hostel": "Hostel",
       "faith": "Place of worship",
-      "park": "Park"
+      "park": "Park",
+      "landmark": "Landmark"
     },
     "items": {
       "coffee": "a filter coffee",
@@ -1630,10 +1638,11 @@
       "bag": "Bag",
       "hairNames": [
         "Short",
-        "Buns",
+        "Bun",
         "Long",
-        "Buzz cut",
-        "Short with beard"
+        "Ponytail",
+        "Curly",
+        "Buzz cut"
       ],
       "hairColorNames": [
         "Black",
@@ -1663,7 +1672,7 @@
       "bottomNames": [
         "Jeans",
         "Trousers",
-        "Track pants",
+        "Long skirt",
         "Shorts"
       ],
       "shoesNames": [
@@ -1677,11 +1686,6 @@
         "Backpack",
         "Tote bag",
         "Sling bag"
-      ],
-      "body": "Body",
-      "bodyNames": [
-        "Type 1",
-        "Type 2"
       ]
     },
     "people": {

@@ -17,7 +17,12 @@ export type World = {
   trees: [number, number, number][];
   /** Bus stops (OpenStreetMap), for shelters. */
   stops?: XZ[];
-  places: Record<string, { x: number; z: number; door: XZ; b?: number }>;
+  /** island: the radius of a roundabout's island, for a landmark that stands on one (the clock tower). */
+  places: Record<string, { x: number; z: number; door: XZ; b?: number; island?: number }>;
+  /** The arch gate across the entrance avenue: centre, facing (along the avenue) and the gap between its two roads. */
+  gate?: { x: number; z: number; ry: number; span: number };
+  /** The world is drawn at this fraction of real size (distances and footprints; heights stay real). */
+  scale?: number;
 };
 
 export const inside = (x: number, z: number, poly: XZ[]) => {

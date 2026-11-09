@@ -8,7 +8,8 @@
       "name": "SRM main gate",
       "kind": "arrival",
       "href": "/campuses/kattankulathur",
-      "photo": "media/campuses/kattankulathur.jpg"
+      "photo": "media/campuses/kattankulathur.jpg",
+      "archGate": true
     },
     {
       "id": "potheri",
@@ -31,6 +32,14 @@
       "name": "SRM Library",
       "kind": "library",
       "href": "/research"
+    },
+    {
+      "id": "clock-tower",
+      "roundabout": 188574980,
+      "face": "gate",
+      "name": "Clock Tower",
+      "kind": "landmark",
+      "href": "/campuses/kattankulathur"
     },
     {
       "id": "java",
@@ -80,8 +89,7 @@
       "name": "CRC Block",
       "kind": "academic",
       "floors": 9,
-      "href": "/campuses/kattankulathur",
-      "clockTower": true
+      "href": "/campuses/kattankulathur"
     },
     {
       "id": "main-block",
@@ -304,9 +312,8 @@
       "id": "counsellor",
       "at": "university-building",
       "outfit": {
-        "body": 1,
         "skin": 2,
-        "hair": 2,
+        "hair": 3,
         "hairColor": 0,
         "top": 0,
         "bottom": 1,
@@ -318,9 +325,8 @@
       "id": "librarian",
       "at": "library",
       "outfit": {
-        "body": 0,
         "skin": 4,
-        "hair": 4,
+        "hair": 1,
         "hairColor": 3,
         "top": 6,
         "bottom": 0,
@@ -332,12 +338,11 @@
       "id": "senior",
       "at": "java",
       "outfit": {
-        "body": 1,
         "skin": 3,
-        "hair": 1,
+        "hair": 0,
         "hairColor": 0,
         "top": 4,
-        "bottom": 1,
+        "bottom": 2,
         "shoes": 2,
         "bag": 1
       }
@@ -346,9 +351,8 @@
       "id": "friend",
       "at": "vendhar",
       "outfit": {
-        "body": 0,
         "skin": 1,
-        "hair": 0,
+        "hair": 4,
         "hairColor": 1,
         "top": 7,
         "bottom": 0,
@@ -360,9 +364,8 @@
       "id": "camber",
       "at": "mech-hangar",
       "outfit": {
-        "body": 1,
         "skin": 5,
-        "hair": 1,
+        "hair": 2,
         "hairColor": 0,
         "top": 1,
         "bottom": 1,
@@ -374,12 +377,11 @@
       "id": "techpark",
       "at": "tech-park",
       "outfit": {
-        "body": 0,
         "skin": 2,
-        "hair": 0,
+        "hair": 5,
         "hairColor": 0,
         "top": 3,
-        "bottom": 1,
+        "bottom": 2,
         "shoes": 2,
         "bag": 3
       }
@@ -388,9 +390,8 @@
       "id": "founder",
       "at": "incubation",
       "outfit": {
-        "body": 1,
         "skin": 0,
-        "hair": 2,
+        "hair": 0,
         "hairColor": 2,
         "top": 5,
         "bottom": 1,
@@ -402,7 +403,6 @@
       "id": "host",
       "at": "auditorium",
       "outfit": {
-        "body": 0,
         "skin": 3,
         "hair": 3,
         "hairColor": 0,
@@ -416,9 +416,8 @@
       "id": "warden",
       "at": "paari",
       "outfit": {
-        "body": 0,
         "skin": 4,
-        "hair": 4,
+        "hair": 1,
         "hairColor": 4,
         "top": 0,
         "bottom": 1,

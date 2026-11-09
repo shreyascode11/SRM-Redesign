@@ -6,7 +6,8 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import type { World, XZ } from "@/lib/walk/world";
 import { useFrame } from "@react-three/fiber";
 import { chennaiHour } from "@/lib/walk/world";
-import { buildCampus, buildStreets, type Clock, type Sign } from "./buildings";
+import { buildCampus, buildStreets, type Clock, isLandmark, type Sign } from "./buildings";
+import { buildLandmarks } from "./landmarks";
 import { toon } from "./curve";
 
 /**
@@ -263,30 +264,41 @@ function dialTexture() {
   c.width = c.height = S;
   const x = c.getContext("2d")!;
   const R = S / 2;
-  x.fillStyle = "#8b2d32";
+  // Like the real tower's dials: a white face, a black rim, black Roman numerals and minute ticks.
+  x.fillStyle = "#1f2226";
   x.beginPath();
   x.arc(R, R, R, 0, Math.PI * 2);
   x.fill();
-  x.fillStyle = "#f7f0e0";
+  x.fillStyle = "#fbfaf4";
   x.beginPath();
-  x.arc(R, R, R * 0.88, 0, Math.PI * 2);
+  x.arc(R, R, R * 0.92, 0, Math.PI * 2);
   x.fill();
-  x.strokeStyle = "#1d2330";
-  x.lineCap = "round";
+  x.strokeStyle = "#1f2226";
+  x.lineWidth = 5;
+  x.beginPath();
+  x.arc(R, R, R * 0.86, 0, Math.PI * 2);
+  x.stroke();
   for (let i = 0; i < 60; i++) {
     const a = (i / 60) * Math.PI * 2;
-    const hour = i % 5 === 0;
-    x.lineWidth = hour ? 14 : 4;
-    const r0 = hour ? R * 0.66 : R * 0.76;
+    x.lineWidth = i % 5 === 0 ? 9 : 4;
     x.beginPath();
-    x.moveTo(R + Math.sin(a) * r0, R - Math.cos(a) * r0);
-    x.lineTo(R + Math.sin(a) * R * 0.82, R - Math.cos(a) * R * 0.82);
+    x.moveTo(R + Math.sin(a) * R * 0.8, R - Math.cos(a) * R * 0.8);
+    x.lineTo(R + Math.sin(a) * R * 0.86, R - Math.cos(a) * R * 0.86);
     x.stroke();
   }
-  x.fillStyle = "#8b2d32";
-  x.font = `800 ${S * 0.07}px system-ui, sans-serif`;
+  x.fillStyle = "#1f2226";
+  x.font = `700 ${S * 0.1}px Georgia, "Times New Roman", serif`;
   x.textAlign = "center";
-  x.fillText("SRM", R, R + R * 0.42);
+  x.textBaseline = "middle";
+  const ROMAN = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
+  ROMAN.forEach((n, i) => {
+    const a = (i / 12) * Math.PI * 2;
+    x.save();
+    x.translate(R + Math.sin(a) * R * 0.66, R - Math.cos(a) * R * 0.66);
+    x.rotate(a);
+    x.fillText(n, 0, 0);
+    x.restore();
+  });
   dial = new THREE.CanvasTexture(c);
   dial.colorSpace = THREE.SRGBColorSpace;
   dial.anisotropy = 4;
@@ -314,16 +326,16 @@ function ClockFaces({ clocks }: { clocks: Clock[] }) {
           </mesh>
           <group ref={(m) => void (hours.current[i] = m as unknown as THREE.Mesh)} position-z={0.03}>
             <mesh position-y={c.r * 0.26} material={hand}>
-              <planeGeometry args={[0.18, c.r * 0.6]} />
+              <planeGeometry args={[c.r * 0.1, c.r * 0.6]} />
             </mesh>
           </group>
           <group ref={(m) => void (minutes.current[i] = m as unknown as THREE.Mesh)} position-z={0.05}>
             <mesh position-y={c.r * 0.38} material={hand}>
-              <planeGeometry args={[0.11, c.r * 0.86]} />
+              <planeGeometry args={[c.r * 0.06, c.r * 0.86]} />
             </mesh>
           </group>
           <mesh position-z={0.07} material={hand}>
-            <circleGeometry args={[0.14, 12]} />
+            <circleGeometry args={[c.r * 0.08, 12]} />
           </mesh>
         </group>
       ))}
@@ -455,7 +467,7 @@ function hedges(world: World) {
   const box = new THREE.BoxGeometry(1, 1, 1, 2, 1, 2);
   const doors = Object.values(world.places).map((p) => p.door);
   for (const b of world.buildings) {
-    if (!b.n || b.n.endsWith("-tower") || b.h < 7) continue;
+    if (!b.n || isLandmark(b.n) || b.h < 7) continue;
     const p = b.p;
     for (let i = 0; i < p.length; i++) {
       const a = p[i]!;
@@ -499,12 +511,16 @@ export function WorldMeshes({ world, highlight, names }: { world: World; highlig
     const roads = world.roads.filter((r) => !r.f);
     const paths = world.roads.filter((r) => r.f);
     const campus = buildCampus(world, names);
+    const marks = buildLandmarks(world);
     const b = world.bounds;
     const ground = new THREE.PlaneGeometry(b.maxX - b.minX + 900, b.maxZ - b.minZ + 900, 120, 100);
     ground.rotateX(-Math.PI / 2);
     ground.translate((b.minX + b.maxX) / 2, -0.02, (b.minZ + b.maxZ) / 2);
     return {
       ...campus,
+      signs: [...campus.signs, ...marks.signs],
+      clocks: marks.clocks,
+      landmarks: marks.geo,
       streets: buildStreets(world),
       ground,
       roads: roads.length ? mergeGeometries(roads.map((r) => lane(r.p, r.w, 0.05))) : null,
@@ -630,6 +646,7 @@ export function WorldMeshes({ world, highlight, names }: { world: World; highlig
       <ClockFaces clocks={statics.clocks} />
       <mesh geometry={statics.walls} material={toon({ vertexColors: true, windows: true })} castShadow receiveShadow />
       <mesh geometry={statics.trim} material={toon({ vertexColors: true })} castShadow receiveShadow />
+      {statics.landmarks ? <mesh geometry={statics.landmarks} material={toon({ vertexColors: true })} castShadow receiveShadow /> : null}
       {statics.glass ? <mesh geometry={statics.glass} material={toon({ vertexColors: true })} receiveShadow /> : null}
       <mesh geometry={statics.streets} material={toon({ vertexColors: true })} castShadow receiveShadow />
       <Signs signs={statics.signs} />

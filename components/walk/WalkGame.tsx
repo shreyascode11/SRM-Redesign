@@ -6,7 +6,7 @@ import type { Outfit, WalkScript } from "@/lib/walk/script";
 import { chennaiHour, Collider, Paths, type World, type XZ } from "@/lib/walk/world";
 import { Dialogue, EmoteWheel, Finish, fmt, hudBtn, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
 import { type Npc, type Overlay, Scene, type Sky } from "./Scene";
-import { carrying, type Game, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
+import { carrying, type Game, jump, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
 
 /** Light and sky: a painted teal day by default (anime style), or Chennai's real time of day. */
 function skyFor(h: number): Sky {
@@ -36,6 +36,21 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const [touch, setTouch] = useState(false);
   const overlay = useMemo<Overlay>(() => ({ els: new Map(), anchors: new Map(), range: new Map() }), []);
   const [light, setLight] = useState<"live" | "day">("day");
+  // Run toggle (the 🏃 button or R) and walking speed (pause menu), remembered between visits.
+  const [running, setRunning] = useState(false);
+  const [pace, setPace] = useState<number>(() => {
+    try {
+      const v = Number(localStorage.getItem("srm-walk-pace"));
+      return [1, 1.3, 1.6].includes(v) ? v : 1;
+    } catch {
+      return 1;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("srm-walk-pace", String(pace));
+    } catch {}
+  }, [pace]);
   const sky = useMemo(() => skyFor(light === "day" ? 12 : chennaiHour()), [light]);
   const base = script.locale === "en" ? "" : `/${script.locale}`;
   const placeNames = useMemo(() => Object.fromEntries(script.places.map((p) => [p.id, p.name])), [script.places]);
@@ -77,6 +92,16 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     const spawn = world.places[world.spawn];
     game.current = newGame(spawn ? [spawn.door[0], spawn.door[1] + 6] : [0, 0], script.people.map((p) => p.id));
     game.current.reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Arriving at the main gate: face up the avenue, through the arches.
+    if (world.gate && world.spawn === "gate") {
+      game.current.pos = { x: spawn!.door[0], z: spawn!.door[1] };
+      game.current.heading = world.gate.ry;
+      game.current.cam.yaw = world.gate.ry + Math.PI;
+    }
+  }
+  if (game.current) {
+    game.current.pace = pace;
+    game.current.run = running;
   }
 
   // ── Progress, wayfinding target and saving ──
@@ -225,6 +250,16 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       const g = game.current;
       if (!g || isField(e)) return;
       const k = e.key.toLowerCase();
+      if (k === " " && !talk && (!panel || panel === "emote")) {
+        if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement) return;
+        e.preventDefault();
+        jump(g);
+        return;
+      }
+      if (k === "r" && !talk && !panel) {
+        setRunning((v) => !v);
+        return;
+      }
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(k)) {
         g.keys.add(k);
         if (k.startsWith("arrow")) e.preventDefault();
@@ -463,6 +498,23 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                     </button>
                   ) : null}
                   <div className="flex gap-2">
+                    <button
+                      type="button"
+                      aria-pressed={running}
+                      onClick={() => setRunning((v) => !v)}
+                      className={`${hudBtn} pointer-events-auto min-h-12 gap-1.5 px-4 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}
+                    >
+                      <span aria-hidden="true">{running ? "🏃" : "🚶"}</span>
+                      <span className="text-sm font-bold">{running ? ui.run : ui.walkMode}</span>
+                      <kbd className="hidden rounded bg-white/15 px-1.5 text-xs sm:inline">R</kbd>
+                    </button>
+                    <button type="button" onClick={() => jump(game.current)} className={`${hudBtn} pointer-events-auto min-h-12 gap-1.5 px-4`}>
+                      <span aria-hidden="true">⤒</span>
+                      <span className="text-sm font-bold">{ui.jump}</span>
+                      <kbd className="hidden rounded bg-white/15 px-1.5 text-xs sm:inline">Space</kbd>
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
                     <button type="button" onClick={() => setPanel("emote")} className={`${hudBtn} pointer-events-auto size-12`}>
                       😊<span className="sr-only">{ui.emote}</span>
                     </button>
@@ -550,7 +602,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
           ) : null}
           {panel === "outfit" ? <OutfitPanel script={script} outfit={outfit} onChange={setOutfit} onDone={() => setPanel(null)} /> : null}
           {panel === "emote" ? <EmoteWheel script={script} onPick={emote} onClose={() => setPanel(null)} /> : null}
-          {panel === "pause" ? <PauseMenu script={script} quality={quality} onQuality={setQuality} light={light} onLight={setLight} onResume={() => setPanel(null)} onExit={onExit} /> : null}
+          {panel === "pause" ? <PauseMenu script={script} quality={quality} onQuality={setQuality} light={light} onLight={setLight} pace={pace} onPace={setPace} onResume={() => setPanel(null)} onExit={onExit} /> : null}
           {panel === "finish" ? <Finish script={script} onClose={() => setPanel(null)} apply={`${base}/admissions#apply`} findProgramme={`${base}/programmes`} /> : null}
         </>
       )}

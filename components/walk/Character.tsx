@@ -1,11 +1,10 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Outfit } from "@/lib/walk/script";
 import { toon } from "./curve";
-import { regionColors, RiggedCharacter } from "./Rigged";
 
 /**
  * An anime-style student (our own design), built in code: real proportions (about 1.75 m, seven heads tall), a face
@@ -14,8 +13,9 @@ import { regionColors, RiggedCharacter } from "./Rigged";
  * outfit screen is a colour or a visible part, so a change costs nothing to load.
  */
 
-export type Anim = { speed: number; wave: number; cheer: number; talk: number; look: number };
-export const newAnim = (): Anim => ({ speed: 0, wave: 0, cheer: 0, talk: 0, look: 0 });
+/** air: 0 on the ground … 1 in the middle of a jump (knees tucked, arms out). */
+export type Anim = { speed: number; wave: number; cheer: number; talk: number; look: number; air: number };
+export const newAnim = (): Anim => ({ speed: 0, wave: 0, cheer: 0, talk: 0, look: 0, air: 0 });
 
 export const PALETTE = {
   skin: ["#f6dcc8", "#e8bf9f", "#cf9a72", "#b07a54", "#8d5b3c", "#65412a"],
@@ -35,8 +35,8 @@ export const PALETTE = {
   shoes: ["#f0f0ea", "#7a5236", "#33292a", "#b9373a"],
   bag: ["#000000", "#3d5a6c", "#e2b13c", "#6d597a"],
 };
-export const OUTFIT_SIZES: Record<keyof Outfit, number> = { body: 2, hair: 5, hairColor: 5, skin: 6, top: 8, bottom: 4, shoes: 4, bag: 4 };
-export const DEFAULT_OUTFIT: Outfit = { body: 0, skin: 2, hair: 0, hairColor: 0, top: 0, bottom: 0, shoes: 0, bag: 1 };
+export const OUTFIT_SIZES: Record<keyof Outfit, number> = { hair: 6, hairColor: 5, skin: 6, top: 8, bottom: 4, shoes: 4, bag: 4 };
+export const DEFAULT_OUTFIT: Outfit = { skin: 2, hair: 0, hairColor: 0, top: 0, bottom: 0, shoes: 0, bag: 1 };
 
 // ── Shared geometry (metres) ──
 const cyl = (rt: number, rb: number, h: number, s = 10) => new THREE.CylinderGeometry(rt, rb, h, s);
@@ -281,36 +281,7 @@ const BACK: [number, number, number, number, number][] = [
   [0.145, 0.03, -0.02, 0.15, -0.3],
 ];
 
-/**
- * A student: the rigged, animated model (Rigged.tsx) once its files have loaded, and this code-built one meanwhile
- * (or if the files can't load). Same outfit, same animation state either way.
- */
-export function Character(props: { outfit: Outfit; anim: React.RefObject<Anim>; scale?: number; blob?: boolean }) {
-  const colors = useMemo(() => regionColors(props.outfit, PALETTE), [props.outfit]);
-  const fallback = <ProceduralCharacter {...props} />;
-  return (
-    <ModelBoundary fallback={fallback}>
-      <Suspense fallback={fallback}>
-        <group scale={props.scale ?? 1}>
-          <RiggedCharacter outfit={props.outfit} colors={colors} anim={props.anim} />
-          {props.blob ? <mesh geometry={G.blob} material={toon({ color: "#000000", transparent: true, opacity: 0.18 })} rotation-x={-Math.PI / 2} position-y={0.03} userData={{ noInk: true }} /> : null}
-        </group>
-      </Suspense>
-    </ModelBoundary>
-  );
-}
-
-class ModelBoundary extends Component<{ fallback: React.ReactNode; children: React.ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
-}
-
-function ProceduralCharacter({ outfit, anim, scale = 1, blob = false }: { outfit: Outfit; anim: React.RefObject<Anim>; scale?: number; blob?: boolean }) {
+export function Character({ outfit, anim, scale = 1, blob = false }: { outfit: Outfit; anim: React.RefObject<Anim>; scale?: number; blob?: boolean }) {
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const torso = useRef<THREE.Group>(null);
@@ -391,7 +362,20 @@ function ProceduralCharacter({ outfit, anim, scale = 1, blob = false }: { outfit
         jump = Math.abs(Math.sin(t * 9)) * 0.22;
       }
     }
-    if (body.current) body.current.position.y = Math.abs(Math.cos(phase.current)) * 0.045 * k * run + Math.sin(t * 2) * 0.004 + jump;
+    // In the air: one knee tucked up, the other trailing, arms thrown out.
+    const air = a.air;
+    if (air > 0.01 && legL.current && legR.current && kneeL.current && kneeR.current && armL.current && armR.current) {
+      const mix = THREE.MathUtils.lerp;
+      legL.current.rotation.x = mix(legL.current.rotation.x, -0.75, air);
+      legR.current.rotation.x = mix(legR.current.rotation.x, 0.2, air);
+      kneeL.current.rotation.x = mix(kneeL.current.rotation.x, 1.25, air);
+      kneeR.current.rotation.x = mix(kneeR.current.rotation.x, 0.6, air);
+      armL.current.rotation.z = mix(armL.current.rotation.z, -1.15, air);
+      armR.current.rotation.z = mix(armR.current.rotation.z, 1.15, air);
+      armL.current.rotation.x = mix(armL.current.rotation.x, -0.35, air);
+      armR.current.rotation.x = mix(armR.current.rotation.x, -0.35, air);
+    }
+    if (body.current) body.current.position.y = Math.abs(Math.cos(phase.current)) * 0.045 * k * run * (1 - air) + Math.sin(t * 2) * 0.004 + jump;
     if (torso.current) {
       torso.current.rotation.x = 0.07 * k * run;
       torso.current.rotation.y = s * 0.07 * k;
@@ -407,8 +391,7 @@ function ProceduralCharacter({ outfit, anim, scale = 1, blob = false }: { outfit
   const skirt = outfit.bottom === 2;
   const shorts = outfit.bottom === 3;
   const longSleeves = outfit.top === 2 || outfit.top === 4 || outfit.top === 5;
-  // Hair choices follow the model pack: short, buns, long, buzz cut, short with beard.
-  const hair = [0, 1, 2, 5, 0][outfit.hair] ?? 0;
+  const hair = outfit.hair;
 
   const leg = (side: -1 | 1) => (
     <group ref={side < 0 ? legL : legR} position={[side * 0.095, 0.9, 0]}>

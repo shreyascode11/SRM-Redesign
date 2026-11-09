@@ -243,8 +243,8 @@ export function Scene({
       }
     }
     const len = Math.hypot(mx, mz);
-    const runOn = g.run || g.keys.has("shift") || Math.hypot(g.joy.x, g.joy.y) > 0.92 || (g.route.length > 0 && routeLength(g) > 60);
-    const want = len > 0.05 ? (runOn ? RUN : WALK) * Math.min(1, len) : 0;
+    const runOn = g.run || g.keys.has("shift") || Math.hypot(g.joy.x, g.joy.y) > 0.92 || (g.route.length > 0 && routeLength(g) > 40);
+    const want = len > 0.05 ? (runOn ? RUN : WALK) * g.pace * Math.min(1, len) : 0;
     g.speed += (want - g.speed) * Math.min(1, dt * (want > g.speed ? 6 : 10));
     if (len > 0.05) {
       const h = Math.atan2(mx, mz);
@@ -263,9 +263,16 @@ export function Scene({
       g.pos.z = rz;
     }
     g.anim.speed = g.speed;
+    // Jumping: up at jumpV, pulled down by gravity, land softly.
+    if (g.jumpY > 0) {
+      g.jumpV -= 19 * dt;
+      g.jumpY = Math.max(0, g.jumpY + g.jumpV * dt);
+      if (g.jumpY === 0) g.jumpV = 0;
+    }
+    g.anim.air += ((g.jumpY > 0.05 ? 1 : 0) - g.anim.air) * Math.min(1, dt * 14);
     curve.uCenter.value.set(g.pos.x, g.pos.z);
     if (player.current) {
-      player.current.position.set(g.pos.x, 0, g.pos.z);
+      player.current.position.set(g.pos.x, g.jumpY, g.pos.z);
       player.current.rotation.y = g.heading;
     }
     // The sun (and its shadow box) follows you.
@@ -291,18 +298,18 @@ export function Scene({
       occlusion.current = f;
     }
     const dist = g.cam.dist * occlusion.current;
-    const ahead = g.reduced ? 0 : Math.min(1, g.speed / RUN) * 2.5;
+    const ahead = g.reduced ? 0 : Math.min(1, g.speed / (RUN * g.pace)) * 2.5;
     const tx = g.pos.x + Math.sin(g.heading) * ahead;
     const tz = g.pos.z + Math.cos(g.heading) * ahead;
     const want3 = tmp.set(
       tx + Math.sin(g.cam.yaw) * dist * Math.cos(g.cam.pitch),
-      UP + dist * Math.sin(g.cam.pitch),
+      UP + g.jumpY * 0.6 + dist * Math.sin(g.cam.pitch),
       tz + Math.cos(g.cam.yaw) * dist * Math.cos(g.cam.pitch),
     );
     if (camPos.current.lengthSq() === 0 || g.reduced) camPos.current.copy(want3);
     else camPos.current.lerp(want3, Math.min(1, dt * 5));
     camera.position.copy(camPos.current);
-    camera.lookAt(tx, UP - 0.6, tz);
+    camera.lookAt(tx, UP - 0.6 + g.jumpY * 0.6, tz);
 
     // ── People: look at you when you're near, turn to you while talking; hidden when far away ──
     let nearPerson: string | null = null;

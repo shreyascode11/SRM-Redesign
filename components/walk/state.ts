@@ -6,6 +6,13 @@ import { type Anim, DEFAULT_OUTFIT, newAnim, OUTFIT_SIZES } from "./Character";
  * The live game state that changes every frame (position, input, camera) lives in one mutable object, read by the 3D
  * scene and the HUD without React re-renders. Things the HUD shows as UI (dialogue, quests, panels) are React state.
  */
+/** Start a jump if you're on the ground and free to move. */
+export const jump = (g: Game) => {
+  if (g.jumpY > 0 || g.frozen || g.paused) return;
+  g.jumpV = 6.4;
+  g.jumpY = 0.001;
+};
+
 export type Game = {
   pos: { x: number; z: number };
   heading: number;
@@ -13,6 +20,11 @@ export type Game = {
   keys: Set<string>;
   joy: { x: number; y: number };
   run: boolean;
+  /** Walking speed setting: 1 normal · 1.3 fast · 1.6 turbo. */
+  pace: number;
+  /** Jumping: height above the ground and upward speed. */
+  jumpY: number;
+  jumpV: number;
   route: XZ[];
   onArrive: (() => void) | null;
   cam: { yaw: number; pitch: number; dist: number; minDist: number };
@@ -34,6 +46,9 @@ export const newGame = (start: XZ, people: string[]): Game => ({
   keys: new Set(),
   joy: { x: 0, y: 0 },
   run: false,
+  pace: 1,
+  jumpY: 0,
+  jumpV: 0,
   route: [],
   onArrive: null,
   cam: { yaw: 0.6, pitch: 0.2, dist: 5.2, minDist: 5.2 },

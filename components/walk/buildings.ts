@@ -37,9 +37,9 @@ export const styleOf = (b: World["buildings"][number]): Style => {
 };
 
 // ── Geometry helpers (all non-indexed, position + normal + color [+ aStyle + aU]) ──
-type Buf = { pos: number[]; nrm: number[]; col: number[]; sty: number[]; u: number[] };
-const newBuf = (): Buf => ({ pos: [], nrm: [], col: [], sty: [], u: [] });
-const toGeo = (b: Buf, withWindows = false) => {
+export type Buf = { pos: number[]; nrm: number[]; col: number[]; sty: number[]; u: number[] };
+export const newBuf = (): Buf => ({ pos: [], nrm: [], col: [], sty: [], u: [] });
+export const toGeo = (b: Buf, withWindows = false) => {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(b.pos, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(b.nrm, 3));
@@ -60,7 +60,7 @@ const tri = (b: Buf, c: THREE.Color, n: number[], style: number, ...v: [number, 
   }
 };
 /** Append any three.js geometry (moved by `m`) to a buffer, in one colour. */
-const addGeo = (b: Buf, geo: THREE.BufferGeometry, m: THREE.Matrix4, c: THREE.Color) => {
+export const addGeo = (b: Buf, geo: THREE.BufferGeometry, m: THREE.Matrix4, c: THREE.Color) => {
   const g = (geo.index ? geo.toNonIndexed() : geo.clone()).applyMatrix4(m);
   g.computeVertexNormals();
   const p = g.getAttribute("position");
@@ -176,66 +176,10 @@ const place = (x: number, y: number, z: number, sx: number, sy: number, sz: numb
   M.compose(P.set(x, y, z), Q.setFromEuler(E.set(0, ry, 0)), S.set(sx, sy, sz));
 
 export type Sign = { text: string; sub?: string; bg: string; fg: string; x: number; y: number; z: number; ry: number; w: number; h: number };
+/** Footprints drawn by landmarks.ts (the arch gate's piers and statue, the clock tower's island). */
+export const isLandmark = (n?: string) => !!n && (n.startsWith("gate-") || n === "clock-tower");
 /** A clock face on the tower: centre, facing, radius. */
 export type Clock = { x: number; y: number; z: number; ry: number; r: number };
-
-/**
- * The clock tower at the CRC Block (our own design): a stepped stone plinth, a cream shaft with SRM-orange corner
- * pilasters and banding, a clock stage with a face on every side, a maroon cornice, a pyramid roof and a gold spire.
- */
-function clockTower(trim: Buf, walls: Buf, p: XZ[], H: number): Clock[] {
-  const cream = new THREE.Color("#efe4cc");
-  const orange = new THREE.Color("#e8935a");
-  const maroon = new THREE.Color("#8b2d32");
-  const stone = new THREE.Color("#c9bfae");
-  const c = p.reduce((s, q) => [s[0] + q[0] / p.length, s[1] + q[1] / p.length], [0, 0]) as XZ;
-  const ry = Math.atan2(p[1]![0] - p[0]![0], p[1]![1] - p[0]![1]);
-  ledge(trim, p, 1.4, 0.35, 0.35, stone);
-  ledge(trim, p, 0.8, 0.7, 0.35, stone);
-  const stage = H - 7;
-  // A solid stone shaft (no glass grid): plain cream walls, stone corner quoins, a few orange string courses and
-  // tall slit windows up the middle of each face.
-  shell(walls, p, 0, stage, cream, null, 0);
-  for (let y = 4.2; y < stage - 3; y += 9) ledge(trim, p, 0.22, y, 0.35, orange);
-  ledge(trim, p, 0.3, stage - 1.2, 0.3, orange);
-  for (const [x, z] of p) addGeo(trim, BOX, place(x, stage / 2, z, 0.9, stage, 0.9, ry), stone);
-  const slit = new THREE.Color("#3b3f4a");
-  for (let i = 0; i < p.length; i++) {
-    const a = p[i]!;
-    const b = p[(i + 1) % p.length]!;
-    const [nx, nz] = outward(p, i);
-    const mx = (a[0] + b[0]) / 2 + nx * 0.04;
-    const mz = (a[1] + b[1]) / 2 + nz * 0.04;
-    for (let y = 8.5; y < stage - 4; y += 9) addGeo(trim, BOX, place(mx, y, mz, 0.55, 2.6, 0.1, Math.atan2(nx, nz)), slit);
-  }
-  // An entrance on the first face.
-  {
-    const a = p[0]!;
-    const b = p[1]!;
-    const [nx, nz] = outward(p, 0);
-    addGeo(trim, BOX, place((a[0] + b[0]) / 2 + nx * 0.05, 1.6, (a[1] + b[1]) / 2 + nz * 0.05, 1.5, 2.6, 0.1, Math.atan2(nx, nz)), slit);
-  }
-  // The clock stage, a little wider than the shaft.
-  const wide = offset(p, 0.35);
-  shell(walls, wide, stage, H - 1.2, cream, null, 0);
-  ledge(trim, p, 0.6, stage + 0.25, 0.25, maroon);
-  shell(trim, offset(p, 0.75), H - 1.2, H - 0.6, maroon, maroon, 0);
-  // Pyramid roof and spire.
-  const half = Math.max(...p.map(([x, z]) => Math.hypot(x - c[0], z - c[1]))) + 0.9;
-  const roof = new THREE.ConeGeometry(half, 4.2, 4);
-  addGeo(trim, roof, M.compose(P.set(c[0], H - 0.6 + 2.1, c[1]), Q.setFromEuler(E.set(0, ry + Math.PI / 4, 0)), S.set(1, 1, 1)), maroon);
-  addGeo(trim, CYL, place(c[0], H + 4.6, c[1], 0.07, 2.2, 0.07), new THREE.Color("#e2b13c"));
-  addGeo(trim, new THREE.SphereGeometry(0.28, 10, 8), place(c[0], H + 3.7, c[1], 1, 1, 1), new THREE.Color("#e2b13c"));
-  // A face on every side of the stage.
-  const faces: Clock[] = [];
-  for (let i = 0; i < wide.length; i++) {
-    const a = wide[i]!;
-    const b = wide[(i + 1) % wide.length]!;
-    const [nx, nz] = outward(wide, i);
-    faces.push({ x: (a[0] + b[0]) / 2 + nx * 0.06, y: (stage + H - 1.2) / 2, z: (a[1] + b[1]) / 2 + nz * 0.06, ry: Math.atan2(nx, nz), r: Math.min(2.3, Math.hypot(b[0] - a[0], b[1] - a[1]) * 0.3) });
-  }
-  return faces;
-}
 
 /**
  * Everything for the buildings, as a few merged meshes:
@@ -250,7 +194,6 @@ export function buildCampus(world: World, names: Record<string, string>) {
   const trim = newBuf();
   const glass = newBuf();
   const signs: Sign[] = [];
-  const clocks: Clock[] = [];
   const col = (h: string) => new THREE.Color(h);
   const doorOf = new Map<number, { id: string; door: XZ }>();
   for (const [id, pl] of Object.entries(world.places)) if (pl.b !== undefined && !doorOf.has(pl.b)) doorOf.set(pl.b, { id, door: pl.door });
@@ -263,17 +206,13 @@ export function buildCampus(world: World, names: Record<string, string>) {
     const roof = col(st.roof);
     // Small sheds and huts: plain walls, no windows.
     const tiny = h < 7;
-    if (bld.n?.endsWith("-tower")) {
-      clocks.push(...clockTower(trim, walls, p, h));
-      return;
-    }
+    // The arch gate and the clock tower are drawn by landmarks.ts; their footprints are only for walking round.
+    if (isLandmark(bld.n)) return;
     shell(walls, p, 0, h, wall, roof, tiny ? 0 : st.win);
 
     // Structure: floor ledges (hostels, homes, hospitals), sunshades over the windows (teaching blocks), corner
     // columns and pilasters, and a plinth. These give the outlines and shadows that make a block read as built.
-    if (!tiny && bld.n !== undefined && bld.n.endsWith("-tower")) {
-      // (the clock tower is built below)
-    } else if (!tiny && st.win !== 4 && st.win !== 5) {
+    if (!tiny && st.win !== 4 && st.win !== 5) {
       const floors = Math.max(1, Math.round(h / 3.4));
       const trimC = col(st.bands ?? st.parapet ?? st.wall).offsetHSL(0, 0, -0.02);
       if (st.bands) {
@@ -444,7 +383,6 @@ export function buildCampus(world: World, names: Record<string, string>) {
     trim: toGeo(trim),
     glass: glass.pos.length ? toGeo(glass) : null,
     signs,
-    clocks,
   };
 }
 
@@ -461,6 +399,8 @@ export function buildStreets(world: World) {
   const white = col("#f2f2ec");
   const doors = Object.values(world.places).map((pl) => pl.door);
   const nearDoor = (x: number, z: number, d: number) => doors.some(([dx, dz]) => Math.hypot(dx - x, dz - z) < d);
+  // Keep the arch gate's forecourt clear of lamp posts and shelters.
+  const nearGate = (x: number, z: number) => !!world.gate && Math.hypot(world.gate.x - x, world.gate.z - z) < 22;
   for (const r of world.roads) {
     if (r.f || r.w < 5) continue;
     let carry = 0;
@@ -480,7 +420,7 @@ export function buildStreets(world: World) {
         const side = rnd() > 0.5 ? 1 : -1;
         const x = ax + dx * t + nx * side * (r.w / 2 + 1.4);
         const z = az + dz * t + nz * side * (r.w / 2 + 1.4);
-        if (nearDoor(x, z, 6)) continue;
+        if (nearDoor(x, z, 6) || nearGate(x, z)) continue;
         addGeo(b, CYL, place(x, 3, z, 0.07, 6, 0.07), pole);
         addGeo(b, BOX, place(x - nx * side * 0.6, 6, z - nz * side * 0.6, 1.3, 0.1, 0.12, Math.atan2(nx, nz) + Math.PI / 2), pole);
         addGeo(b, BOX, place(x - nx * side * 1.2, 5.88, z - nz * side * 1.2, 0.5, 0.14, 0.26, Math.atan2(nx, nz) + Math.PI / 2), lamp);
@@ -513,6 +453,7 @@ export function buildStreets(world: World) {
   }
   // Bus shelters at real bus stops.
   for (const [x, z] of world.stops ?? []) {
+    if (nearGate(x, z)) continue;
     const ry = rnd() * Math.PI;
     addGeo(b, BOX, place(x, 2.6, z, 4.2, 0.18, 2, ry), col("#2f6b5e"));
     for (const s of [-1, 1]) addGeo(b, BOX, M.compose(P.set(x + Math.cos(ry) * s * 1.9, 1.3, z - Math.sin(ry) * s * 1.9), Q.setFromEuler(E.set(0, ry, 0)), S.set(0.12, 2.6, 0.12)), pole);

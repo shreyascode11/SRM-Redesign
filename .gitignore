@@ -15,5 +15,6 @@ next-env.d.ts
 .env*
 WhatsApp Video*
 
-# Source asset packs (Quaternius, CC0). The game uses the small files built from them in public/walk/chars.
+# Downloaded asset packs and raw reference footage: kept out of git.
 Universal *.zip
+IMG_*.MOV
