@@ -16,6 +16,7 @@ SRM's own published data.
 
 ## Contents
 
+- [What's different from srmist.edu.in](#whats-different-from-srmisteduin)
 - [What's inside](#whats-inside)
 - [Walk SRM: the campus as a 3D game](#walk-srm-the-campus-as-a-3d-game)
 - [Quality: performance and accessibility](#quality-performance-and-accessibility)
@@ -24,6 +25,38 @@ SRM's own published data.
 - [Project structure](#project-structure)
 - [How the content stays accurate](#how-the-content-stays-accurate)
 - [Credits](#credits)
+
+## What's different from srmist.edu.in
+
+Measured side by side on 5 November 2026: the public homepage of www.srmist.edu.in and this project's production
+build, with Lighthouse 13.5 (mobile, simulated slow 4G, a fresh visit) and axe-core. Full results in
+[docs/AUDIT.md](docs/AUDIT.md).
+
+| | srmist.edu.in (homepage) | This redesign (homepage) |
+|---|---|---|
+| Lighthouse: performance | 49 | **94** |
+| Lighthouse: accessibility | 81 | **100** |
+| Lighthouse: best practices | 77 | **100** |
+| Lighthouse: SEO | 85 | **100** |
+| Page weight | 10.1 MB | **1.1 MB** |
+| Requests | 386 | **101** |
+| First paint (slow 4G) | 21.8 s | **1.2 s** |
+| Scripts | 62 (39 block rendering; jQuery included 45 times) | One bundle per page; 3D, motion and chat load only when needed |
+| Text that fails contrast | 15 elements | **0** (axe-core) |
+| Links with no accessible name | 35 | **0** |
+| Touch targets too small | 37 | **44 px minimum everywhere** |
+| Security headers | Referrer-Policy only | Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Permissions-Policy, COOP |
+
+And what it adds, on top of the same information:
+
+- **Search in plain words** across every programme, with an AI that can only pick SRM's real programmes
+- **Ask SRM**, an assistant answering from SRM's published data, in English, Tamil and Hindi
+- **The full cost of a course** (tuition, hostel, mess) on every programme page, and **Parent Mode** for plain answers
+- **Compare** up to three programmes side by side
+- **A 3D hostel finder** and **Walk SRM**, the real campus as a game
+- **Lite Mode** and **offline** support for slow connections
+
+Scores are a snapshot of one day; the existing site may have changed since.
 
 ## What's inside
 
