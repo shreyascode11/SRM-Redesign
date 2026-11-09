@@ -3,7 +3,7 @@ import { Fragment } from "react";
 const LATIN = /^[\x20-\x7e₹’'…]+$/;
 
 /**
- * A display headline whose letters rise into place one after another (REFERENCE.md: "rise", 620 ms, staggered).
+ * A display headline whose letters rise into place one after another (docs/DESIGN-REFERENCE.md: "rise", 620 ms, staggered).
  * Latin words are split into letters; Tamil and Devanagari move a whole word at a time, because splitting their
  * letters would break the script. The text stays plain in the DOM, so screen readers read it normally.
  * `onLoad` animates at once (the hero); otherwise GrailMotion starts it when the heading scrolls into view.

@@ -1,80 +1,79 @@
-# Audit: CLAUDE.md §13 (2026-10-25)
+# Accessibility, performance and security audit
 
-Production build (`npm run build:verify` then `npm run start:verify -- -p 3123`), headless Chrome.
+Measured on 5 Nov 2026 with Lighthouse 13.5 (mobile, simulated slow 4G, a fresh visit) and axe-core. Old site = the
+public homepage of www.srmist.edu.in, loaded like any browser would. Ours = the production build of this repo.
+Scores move a little between runs and with server load; treat them as a snapshot, not a promise.
 
-## Re-run on 2026-11-05, after the final-day features (FINAL-DAY-TASKS.md)
+## 1. Gaps on the existing website, with fixes
 
-Link previews, "How far is SRM from home?", the tree finale and offline support are all in this build.
+### Accessibility (Lighthouse 81 / 100)
+| Gap found | How much | Recommended fix | In our build |
+|---|---|---|---|
+| Low text contrast, e.g. light-blue `#7a9bc5` label text at 2.34:1, white link text on white at 1.08:1 (WCAG AA needs 4.5:1) | 15 elements | Darken text or its ground until 4.5:1 (3:1 for large text); check in the design tokens, not page by page | Every colour pair tokenised and checked; axe reports 0 contrast failures |
+| Links with no accessible name (icon-only links) | 35 | Give each an `aria-label` or visible text | Every icon link is labelled; axe 0 |
+| Buttons with no accessible name | 2 | Label them | Labelled |
+| Touch targets too small or too close | 37 | At least 44 px square, with spacing | 44 px minimum, enforced in components; logo and source links fixed in this task |
+| "Skip to content" link exists but is not focusable; an element uses `tabindex` above 0 | 2 | Make the skip link reachable by keyboard; never use tabindex above 0 | Skip link works; no positive tabindex |
+| 64 links that go to `#`, and links with no descriptive text | 64 + 3 | Real destinations or buttons; descriptive link text | Real URLs; "Read more" style links avoided |
 
-| Page (mobile, median of 3) | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT |
-|---|---|---|---|---|---|---|---|
-| `/` (English) | 93 | 100 | 100 | 100 | 3.23 s | 0 | 25 ms |
-| `/ta` (Tamil) | 92 | 100 | 100 | 100 | 3.38 s | 0 | 35 ms |
-| `/programmes/btech-cse` | 97 | 100 | 100 | 100 | 2.69 s | 0 | 5 ms |
-
-- **All three bars hold:** Accessibility, Best Practices and SEO are 100, and Performance is at least 90. Two individual runs
-  (one on `/ta`, one on the programme page) ended in a Lighthouse protocol timeout and were re-run.
-- **Performance is 1–3 points lower than on 2026-10-26** (home 94 → 93, Tamil 94 → 92), with homepage LCP about
-  0.15–0.3 s later. The LCP element is still the hero photo, and its delay is render delay, not loading. The new sections
-  add HTML: the homepage is 68 KB compressed. Rendering the tree finale once for all screen sizes, rather than twice,
-  cut it from 73 KB.
-- **Homepage first-load JS:** 139 KB (budget 180 KB). The new features added about 3 KB.
-- **axe-core 4.14 at 360 × 800:** all 147 sitemap pages, plus the three offline pages, have no violations, no
-  sideways scroll, one `h1` each and no console errors.
-- **Feature suites:** palette, compare, transitions and the 3D map, 36 checks; home distance, 27; tree finale, 19;
-  offline, 18. All pass.
-- **Test note:** long runs on this Mac stalled whenever it slept (its power log shows it). The same pages run with
-  `caffeinate` were clean every time.
-
-**Re-run on 2026-10-25 with 27 real photos, the filled-in content and the official SRM logo in the header:** home 94 / 100 / 100 / 100 (LCP 3.1 s simulated, CLS 0; it was 96 before the logo's extra 7 kB request), B.Tech CSE programme page 98 / 100 / 100 / 100 (LCP 2.5 s); all 135 sitemap URLs pass the 360 px axe + overflow crawl. The hero video and Camber car video are still missing, so re-run once they arrive.
-
-## Lighthouse (mobile)
-
-Median of 3 runs per page.
-
-| Page | Performance | Accessibility | Best Practices | SEO | CLS |
-|---|---|---|---|---|---|
-| `/` (English) | 96 | 100 | 100 | 100 | 0 |
-| `/ta` (Tamil) | 95 | 100 | 100 | 100 | 0 |
-| `/hi` (Hindi) | 95 | 100 | 100 | 100 | 0 |
-
-- **LCP, Lighthouse simulated throttling:** 2.77–2.92 s on the three homepages and about 2.5 s on inner pages. This is above the 2.5 s bar on the homepages.
-- **LCP, applied throttling (4G + 4× CPU slowdown):** 1.47–1.55 s, with Performance 99–100. The real-device budget in §8 is closer to this setting.
-- **LCP, no throttling:** 370 ms.
-- **INP:** not measurable in the lab. Check field data after deploy (Vercel Speed Insights or CrUX).
-- **Homepage first-load JS:** 136 KB, against a 180 KB budget. GSAP, Lenis, Fuse and the search index load after first use or after idle.
-
-## Accessibility and layout
-
-| Run | Scope | Result |
+### Fonts, contrast and readability
+| Gap | Recommended fix | In our build |
 |---|---|---|
-| axe-core 4.10 (WCAG 2.0/2.1/2.2 A+AA + best practice) | All 132 sitemap URLs (every page × en/ta/hi) at 360 × 800 | 0 violations |
-| Horizontal overflow | Same 132 URLs, checked while scrolling the full page | None |
-| Headings, console | Same 132 URLs | Exactly one `h1` per page; no console errors |
-| Keyboard only (Tab through the whole page) | Home at 1280 and 360 px; programme, admissions and campus pages | Skip link first. Every stop shows a focus ring, is on screen and is not hidden behind the sticky header; Tab cycles through with no trap. The hero input's ring is drawn on its wrapper (`focus-within`). |
-| Reduced motion (`prefers-reduced-motion: reduce`) | Home en/ta, programme page, at 1280 and 360 px | Lite Mode on with the reason shown. No Lenis, no pinning, no video or 3D. Tree drawn fully grown. |
-| Lite Mode, manual toggle | Home en/hi, admissions, at 360 px | Same as above |
-| Lite Mode, automatic | Emulated slow 3G connection | Switches on with reason "slow-network" |
-| Map labels and tap targets | Overview map at 360, 412, 768, 1024 and 1440 px × en/ta/hi | No label overlaps another label or pin. No label is clipped. Tapping any dot or label opens that pin. |
+| A 449 KB icon font (`elementskit.woff`) is downloaded for a few icons | Use inline SVG icons | No icon font; icons are inline SVG |
+| Fonts from Google Fonts, an extra third-party request | Self-host with `font-display: swap` | All fonts self-hosted via `next/font`; Tamil and Devanagari get proper script fonts, never faked bold |
+| 81 `h2` headings with one `h1`, many layered inline styles (35) | A clean heading outline and CSS classes | One `h1` per page, headings in order |
+| Dense text, small body size | 16 to 17 px body, 1.5+ line height, line length near 65 characters | 17 px body, 1.6 line height, prose capped at about 65 characters, large serif headings |
 
-## Fixed during the audit
+### Slow-loading pages (Lighthouse performance 49)
+| Finding | Evidence | Recommended fix | In our build |
+|---|---|---|---|
+| Very heavy page | 386 requests, 10.1 MB (homepage HTML alone 709 KB, 104 KB gzipped) | Fewer, smaller assets | 28 to 101 requests, 0.4 to 1.1 MB per page |
+| Main content appears very late | First paint 21.8 s, largest content 56.3 s (simulated slow 4G) | Remove render-blocking work, defer heavy media | First paint 1.1 to 1.2 s |
+| 62 scripts (39 block rendering) and 46 stylesheets | jQuery loaded 45 times in the page source | Bundle, defer, load only what a page uses | One bundle per page, hydrated lazily |
+| Unused code shipped | 343 KB unused JavaScript, 231 KB unused CSS | Code-splitting, purge CSS | Tailwind purge; 3D, GSAP and the chat panel load only when needed |
+| Autoplay video embed | About 1.6 MB fetched plus a 472 KB player script | Load a poster image first; start video on tap | No autoplay video; Lite Mode strips all heavy media |
+| Large uncompressed-format images | 377 KB WebP banner, 303 KB PNG brochure | Resize, AVIF/WebP, correct dimensions | Every photo goes through `next/image` (AVIF/WebP, sized) |
+| HTML sent with `Cache-Control: max-age=0` | Every visit re-downloads | Cache static assets for long, HTML briefly | Hashed assets cached 1 year; media 1 day; intro frames 1 year |
 
-- **Wrong canonical URL (SEO 92).** Every page canonicalised to the homepage. Each page now declares its own canonical and hreflang alternates (`lib/page-metadata.ts`). Added a sitemap (132 URLs with per-locale alternates), `robots.txt` and a favicon.
-- **Tamil layout shift (CLS 0.31).** The Noto font swapped in after first paint. Tamil and Devanagari web fonts now use `display: optional`, and the installed system Tamil/Devanagari fonts (local() "SRM Script" faces) come first. Hindi Performance rose from 85 to 95.
-- **Initial JS and HTML weight.** The search index moved to a static per-locale `/api/search-index/[locale]`, fetched on first use. The motion layer and Fuse warm-up now wait for load plus idle. Client messages are trimmed to the namespaces the client actually uses.
-- **Map at 360 px:**
-  - Delhi's and Sikkim's labels collided; labels can now sit above or below a pin.
-  - The Tamil "Tiruchirappalli" label was clipped.
-  - The decorative pulse ring caught taps meant for the neighbouring Trichy pin.
-  - Pins stay at their true coordinates throughout.
-- **Apply landed on a dead end.** SRM's application portal sometimes answers "403 Forbidden" to ordinary browsers; it's a bot filter on SRM's servers. Every Apply button now goes to `/admissions#apply`. That section links to the portal and, right beside it, gives the fallbacks: SRM's Admissions 2026 page, phone numbers and the enquiry form.
+## 2. Optimisation and security
 
-- **A ₹ cost the homepage ~5 points.** Inter's Latin subset has no ₹, so the first fee on a page pulled Inter's 84 kB Latin-Extended file. A local-first "SRM Rupee" face (₹ only, from the device's fonts) fixed it: back to 96, 2 font files.
+### What we found on our own build, and fixed here
+| Area | Before | After |
+|---|---|---|
+| Security headers | Only `Referrer-Policy` | Added Content-Security-Policy, `X-Frame-Options`, `X-Content-Type-Options`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` (Vercel adds HSTS). The old site sent none of these |
+| Content-Security-Policy | None | Own files only, plus SRM's 360° tour and YouTube (no cookies); `object-src 'none'`, `frame-ancestors 'self'`. Tested on every page type, the 3D hostels, AI search, chat and the 360° tour: no violations |
+| JSON-LD in `<script>` tags | `JSON.stringify` left `<` unescaped | Escaped, so content can never close the tag early (`lib/jsonld.ts`) |
+| Static media caching | `max-age=0` on photos, maps, brand art | 1 day with stale-while-revalidate; intro frames 1 year, immutable |
+| Homepage first-visit weight | 2,964 KB (all 73 intro frames at once) | 1,112 KB: frame 1 now, the rest after the page finishes loading |
+| Homepage blocking time | 210 ms | 20 ms |
+| Secrets | `.env.local` holds the AI key | Git-ignored; scanned the repo and history: no keys committed |
+| AI endpoint abuse | n/a | Per-IP rate limit, query length cap, only real programme slugs accepted |
 
-## How to re-run
+### Lighthouse, mobile (performance / accessibility / best practices / SEO)
+| Page | Old site | Ours |
+|---|---|---|
+| Homepage | 49 / 81 / 77 / 85 | **94 / 100 / 100 / 100** |
+| Programmes | n/a | 95 / 100 / 100 / 100 |
+| A programme page | n/a | 95 / 100 / 100 / 100 |
+| Hostels (3D) | n/a | 94 / 100 / 100 / 100 |
+| Tamil homepage | n/a | 94 / 100 / 100 / 100 |
 
-```sh
-NEXT_PUBLIC_SITE_URL=http://localhost:3123 npm run build:verify
-npm run start:verify -- -p 3123
-npx lighthouse http://localhost:3123/ --form-factor=mobile --only-categories=performance,accessibility,best-practices,seo
-```
+Homepage detail: transfer 10.1 MB to 1.1 MB, 386 requests to 101, first paint 21.8 s to 1.2 s, layout shift 0.044 to 0.001.
+
+### Dependency audit (`npm audit`)
+8 findings remain, none introduced by our code, none exploitable in the running site:
+- **PostCSS (high):** inside Next.js's own build tooling. It concerns stringifying untrusted CSS, which we never do. The fix needs Next.js 16, a major upgrade; scheduled, not rushed.
+- **7 moderate:** dev-only lint tools (`typescript-eslint`, `minimatch`). They never ship to visitors.
+`npm audit fix` changed the lockfile without fixing any of them, so it was not applied.
+
+## 3. Still open (honest list)
+- Largest content paint is about 3 s in Lighthouse's slow-phone simulation (real measurement on a fast network is far lower). Next step: trim the first stylesheet and font weights.
+- The Content-Security-Policy allows inline scripts, because Next.js needs them to start up. A nonce-based policy is the stronger version.
+- Tested in Chrome only. Safari, Firefox and Samsung Internet need a manual pass.
+- Next.js 16 upgrade (clears the PostCSS finding) not done.
+- 360° tour and YouTube are third-party content, outside our control.
+
+## How to repeat
+`NEXT_PUBLIC_SITE_URL=http://localhost:3123 npm run build:verify`, then `npm run start:verify -- -p 3123`, then
+`npx lighthouse@13.5.0 http://localhost:3123/ --preset=perf --form-factor=mobile`. Accessibility: axe-core runs against
+every page type (0 violations at the last check, English, Tamil and Hindi).

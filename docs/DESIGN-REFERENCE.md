@@ -1,4 +1,9 @@
-# REFERENCE.md: what grail-app.com actually looks like
+# Design reference: grail-app.com
+
+The homepage's structure and motion take their cue from Grail (grail-app.com). These are the notes from studying it;
+nothing of Grail's copy, art, fonts or code is used.
+
+## What it looks like
 
 Looked at on 2026-11-05 in Chrome (headless, real rendering) at 1440 × 900 and 390 × 844, scrolled top to bottom,
 with computed styles read from the live page. Page: 11,729 px tall on desktop, 8,562 px on a phone. Nothing here is

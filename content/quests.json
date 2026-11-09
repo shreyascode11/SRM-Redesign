@@ -1,5 +1,5 @@
 {
-  "_note": "Quest board for the 'Level Up at SRM' homepage (SRM-GRAIL-REDESIGN.md). Every quest is something students really do at SRMIST, and every proof comes from content already sourced elsewhere in this repo (stories.json, stats.json, student-life.json, startups.json, research-centres.json). Wording is in messages/{en,ta,hi}.json under Grail.quests.<id>. stat: build | think | connect | grow.",
+  "_note": "Quest board for the 'Level Up at SRM' homepage. Every quest is something students really do at SRMIST, and every proof comes from content already sourced elsewhere in this repo (stories.json, stats.json, student-life.json, startups.json, research-centres.json). Wording is in messages/{en,ta,hi}.json under Grail.quests.<id>. stat: build | think | connect | grow.",
   "stats": ["build", "think", "connect", "grow"],
   "quests": [
     { "id": "camber", "stat": "build", "href": "/stories/camber-racing-formula-bharat-2026", "photo": "media/camber/poster.jpg" },

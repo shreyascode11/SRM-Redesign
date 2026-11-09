@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
 // Rebuilt daily so "Coming up" drops events once they've passed.
 export const revalidate = 86400;
 
-// Homepage on feature/grail-redesign: "Level Up at SRM" (SRM-GRAIL-REDESIGN.md). main keeps the three-act version.
+// Homepage: "Level Up at SRM", a student's years at SRM played as a character who levels up.
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   setRequestLocale(locale);

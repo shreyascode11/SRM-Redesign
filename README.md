@@ -1,65 +1,118 @@
-# SRM Institute of Science and Technology — Next-Gen Website Redesign
+# Level Up at SRM: a redesign of srmist.edu.in
 
-**Redesigned by Shreyas** ([@shreyascode11](https://github.com/shreyascode11)) · An entry for the *Next-Gen SRM Website Design Challenge*
+A concept redesign of the website of **SRM Institute of Science and Technology** (Kattankulathur, Chennai), built with
+Next.js, React Three Fiber and GSAP. It turns a university site into something you play: a student's years at SRM
+become a character who levels up, the campus becomes a 3D world you can walk, and every fact on the page comes from
+SRM's own published data.
 
-A redesign of [srmist.edu.in](https://www.srmist.edu.in/) built around the idea **"Level Up at SRM"**: a student's years played as a character who levels up, with SRM's own tagline **Learn. Leap. Lead.** as the structure. It opens with a scroll-driven walk through SRM's gate, then turns programmes, hostels, campuses and rankings into things you can search, compare, fly to and trust. Underneath, it is a fast, accessible site in English, Tamil and Hindi, built so that a parent on a budget Android phone can find B.Tech CSE fees in a few taps.
+**[Live site →](https://srm-redesign-one.vercel.app)** · **[Play Walk SRM →](https://srm-redesign-one.vercel.app/walk)**
 
-> This is an independent design-challenge entry, not the official SRM website. Facts, fees and dates come from SRM's published pages (see [Content you can trust](#content-you-can-trust)); always confirm admissions details with SRM.
+![The homepage: "Level Up at SRM", a turning helix of real student quests around SRM's emblem](docs/images/home.jpg)
 
-**Live preview:** https://srm-redesign-one.vercel.app · **Demo script:** [DEMO.md](DEMO.md) · **Audit:** [docs/AUDIT-TASK4.md](docs/AUDIT-TASK4.md)
+> An independent project by [Shreyas](https://github.com/shreyascode11), not the official SRM website. Fees, dates and
+> rankings come from SRM's published pages; always confirm admissions details with SRM.
 
 ---
 
-## Highlights
+## Contents
 
-### The experience
-| | |
+- [What's inside](#whats-inside)
+- [Walk SRM: the campus as a 3D game](#walk-srm-the-campus-as-a-3d-game)
+- [Quality: performance and accessibility](#quality-performance-and-accessibility)
+- [Tech stack](#tech-stack)
+- [Run it locally](#run-it-locally)
+- [Project structure](#project-structure)
+- [How the content stays accurate](#how-the-content-stays-accurate)
+- [Credits](#credits)
+
+## What's inside
+
+### A homepage you scroll through like a story
+
+On a first visit, scrolling plays a glide through SRM's real arch gate (an image sequence from SRM's campus film),
+which opens into the homepage. The page is organised around SRM's tagline, **Learn. Leap. Lead.**: find a programme,
+see real student work, then rankings, placements and research, each leading to its part of the site.
+
+| Scroll-driven gate intro | Find your campus |
 |---|---|
-| **Gate intro** | On a first visit, scrolling plays a camera glide towards SRM's gate (a short image sequence), which fades into the homepage as it passes under the arch. Skippable, once per session, and off in Lite Mode, with reduced motion and on Save-Data. |
-| **Level up at SRM** | A turning helix of real quests around SRM's emblem. Pick a path (Building, Research, People, Sport, Startups) and a character card levels up and shows verified SRM quests. |
-| **Learn. Leap. Lead.** | The tagline as a chapter: Learn (find a programme), Leap (real student work), Lead (rankings, placements, research), each linking to its part of the site. |
-| **Quest accepted, clock's running** | An ink-blot reveal into a lilac chapter with the live time at Kattankulathur behind a phone showing a real quest. |
-| **Leafy** | An original mascot on every page: it hops between pages, waves, and thinks while the assistant answers. |
+| ![The gate intro: the camera glides through SRM's arch gate](docs/images/intro.jpg) | ![An India map with all six SRM campuses and three sister universities](docs/images/map.jpg) |
 
-### Finding and choosing
-| | |
+### Finding the right programme
+
+- **Programme finder** with instant search over 29 programmes, level and college filters, and fees on every card.
+- **AI search**: type what you mean ("help sick people", "something with sketching and circuits"). An LLM picks only
+  from SRM's real programme list, and fees always come from the data, never from the model.
+- **Programme pages** with an at-a-glance strip, careers, placements, a **"What will it cost?"** calculator (tuition,
+  hostel and mess for the whole course, from SRM's published fee tables) and **Parent Mode**, which rewrites the page
+  into plain answers about cost, safety, hostel and jobs.
+- **Compare** up to three programmes side by side, with a shareable link.
+
+| Programme finder | A programme page |
 |---|---|
-| **Programme finder** | Instant search over 29 programmes with level and college filters, fees and campus on every card. |
-| **AI search** | Type what you mean ("help sick people", "something with sketching and circuits"). After a short pause a free AI picks the best programmes from SRM's list with a one-line reason each. Only real programmes can be chosen, and fees always come from our data. Falls back to keyword search if the AI is off or busy. |
-| **Recommendations** | "Programmes like this" on every programme page and "Suggested for you" in the finder, matched on shared topics. Free, and the history stays on your device. |
-| **Compare** | Pin up to three programmes and see fees, eligibility, entrance and deadlines side by side, with differences picked out and a shareable link. Works without JavaScript. |
-| **Programme pages** | An at-a-glance strip (level, duration, fees, campus), a floating section menu, key facts, careers, placements and Ask a Senior (demo threads with real moderation states). |
-| **What will it cost?** | On every programme page: tuition + hostel + mess (+ optional laundry) for the whole course, from SRM's published 2026–27 fee tables and hostel circulars only. Says so when SRM hasn't published a figure. |
-| **Stories** | `/stories`: this week at SRM (the curated story and what's coming up), all student work, and alumni with their career paths. |
-| **Parent Mode** | One toggle rewrites a programme page into plain answers about cost, admission, location, safety, hostel and jobs, with large call buttons. |
-| **Command palette** | ⌘K or Ctrl+K for every programme, page and action, in all three languages. |
+| ![The programme finder with filters](docs/images/programmes.jpg) | ![The B.Tech CSE page with fees, campus and Parent Mode](docs/images/programme.jpg) |
 
-### Campuses and hostels
-| | |
+### Ask SRM, an assistant grounded in real data
+
+Leafy, the site's mascot, opens a chat on every page. Questions about fees, deadlines, hostels, rankings and campuses
+are answered from SRM's data with source links and admissions phone numbers, in English, Tamil and Hindi. An optional
+LLM handles anything the rules can't, and the panel says when AI helped.
+
+![The Ask SRM assistant answering a question about hostel fees](docs/images/assistant.jpg)
+
+### Hostels in 3D
+
+A 3D model of the Kattankulathur campus built from OpenStreetMap. Tap a hostel and the camera flies to it and opens
+its card: entrance photo, room types, this year's lowest fee and who to call. A plain list does the same job without
+3D.
+
+![The 3D hostel finder with labelled hostel blocks](docs/images/hostels.jpg)
+
+### Built for every visitor
+
+| English, தமிழ், हिन्दी | On a phone |
 |---|---|
-| **3D hostel finder** | A 3D model of Kattankulathur built from OpenStreetMap. Tap a hostel and the camera flies there and opens its card: entrance photo, room types, this year's lowest fee, the office phone. A plain list does the same job. 12 hostel blocks are modelled; heights are approximate. |
-| **Walk SRM** | `/walk` (or **🎮 Play 3D** in the header and the homepage hero): the real Kattankulathur campus as a small walkable game world, in an anime ink style inspired by Abeto's Messenger. You arrive at the pink **arch gate** (modelled on the site's intro video) as a student you dress yourself (our own anime-style students, built in code), walk real roads up the avenue to the **clock tower** on its roundabout (modelled on the team's video, with live-time clocks), and on to real buildings: the **University Building**, **Tech Park** and the orange **Tech Park 2**, hostels with balconies, **SRM Global Hospitals** and more. Walk, run (R or the 🏃 button) or **jump** (Space), choose your walking speed, and say hi to the 16 students walking the roads: they wave, answer your emotes and tell you where they're going. Talk to nine people at real buildings and take six small quests that raise Build, Think, Connect and Grow. Every fact a character says comes from our content files; every building opens its page. Built from OpenStreetMap at 0.65 scale so walks stay short (heights are real); places OSM only marks with a pin, like the hospitals, get approximate blocks. Loads only after Begin; Lite Mode and no-WebGL get a full text tour. |
-| **Campus map** | India in 3D with all six campuses and three sister universities. Pick your city to see how far each campus is (your location never leaves your device). |
-| **360° · VR tour** | SRM's own virtual tour opens inside the page, with fullscreen and headset support (VR not yet tried on a real headset). |
-| **Hostels, student life, research** | Full pages with photos, 2026-27 fee tables, contacts, mess timings, clubs, counselling, research centres and the patent register, all sourced from SRM's pages. |
+| ![The homepage in Tamil on a phone](docs/images/mobile-tamil.jpg) | ![The homepage on a phone](docs/images/mobile-home.jpg) |
 
-### Ask SRM (free AI, grounded in verified data)
-Open Leafy on any page. Questions about fees, deadlines, hostels, rankings and campuses are answered by rules from SRM's data, with source links, in English, Tamil and Hindi. If the rules can't answer, an optional free AI (any OpenAI-compatible endpoint, tested with Groq's free tier) answers only from the closest verified records, labels itself AI-written, and says "unsure" rather than guess; then it hands you to admissions with the phone numbers. No paid service is needed, and with no AI configured everything still works.
+- **Three languages** throughout, including programme names, fees and the assistant.
+- **Lite Mode** switches on automatically on Save-Data, slow connections or reduced motion: no video, 3D or smooth
+  scrolling, and all of the information.
+- **Works offline**: a hand-written service worker keeps key pages and saved programmes available with no signal.
+- **Command palette** (⌘K / Ctrl+K) for every programme, page and action.
+- **Link previews**: shared programme and campus links show a branded card with the real fee and NIRF rank.
+- **Built-in A/B testing** (`lib/ab.ts`): variants are chosen before first paint, so pages stay static and never
+  flicker. No cookies and no personal data. Results are at `/lab`.
 
-### For everyone
-| | |
+## Walk SRM: the campus as a 3D game
+
+`/walk` turns the real Kattankulathur campus into a small open world in an anime ink style. Open it from **🎮 Play 3D**
+in the header, the homepage hero, or the campus and hostel pages.
+
+![Walk SRM: a student arrives at the pink arch gate](docs/images/game-gate.jpg)
+
+- **A real campus.** Roads, footpaths, lakes and building outlines come from OpenStreetMap, drawn at 0.65 scale so
+  walks stay short (building heights are real). Hostel floor counts come from SRM's hostel data.
+- **Real landmarks**, modelled on footage: the pink **arch gate** at the entrance and the **clock tower** on its
+  roundabout, with clocks showing the live time in Chennai.
+- **Buildings with character**: the University Building, Tech Park, the orange Tech Park 2, hostels with balconies,
+  SRM Global Hospitals and over forty named places, each opening its page on the site.
+- **People to meet.** Nine characters at real buildings answer questions from the site's own data and give six short
+  quests. Sixteen students walk the roads; they wave, answer your emotes and tell you where they're heading.
+- **Play your way**: walk, run or jump with the keyboard, tap the ground to walk there, or use a thumb stick on a
+  phone. Dress your own student, choose your walking speed, and jump anywhere from the map.
+- **Light on the network.** The game loads only after you press Begin, the characters are built in code (no model
+  downloads), and Lite Mode or a device without WebGL gets a full text tour instead.
+
+| The clock tower on its roundabout | The campus from above |
 |---|---|
-| **Three languages** | English, தமிழ் and हिन्दी, including programme names, fees and the assistant. |
-| **Lite Mode** | Automatic on Save-Data, slow connections or reduced motion: strips video, 3D and smooth scrolling, keeps all the information. |
-| **Works offline** | A hand-written service worker keeps key pages and any programme you save working with no signal. |
-| **Link previews** | Programme, campus and story links shared on WhatsApp, X or LinkedIn show a branded card with the real fee and NIRF rank. |
+| ![The clock tower with flowers and a balustrade](docs/images/game-clocktower.jpg) | ![The University Building, the avenue and the clock tower](docs/images/game-campus.jpg) |
 
-### Testing what works (A/B)
-Built-in, private A/B testing (`lib/ab.ts`): a visitor gets variant A or B of each experiment at random, chosen before first paint so pages stay static and never flicker; no cookies, no personal data. Running now: a search-first homepage hero vs the game-style button, and "What will it cost?" first vs "Apply" first on programme pages. Results with a significance test at `/lab` (not indexed); force a variant with `?ab=hero-cta:b`.
+| Hostels | SRM Global Hospitals |
+|---|---|
+| ![Hostel blocks with balconies and washing on the railings](docs/images/game-hostels.jpg) | ![SRM Global Hospitals with its porch and an ambulance](docs/images/game-hospital.jpg) |
 
-## Performance, accessibility and security
+## Quality: performance and accessibility
 
-Lighthouse, mobile, simulated slow 4G, production build, 5 Nov 2026 (full audit and the existing site's gaps in [docs/AUDIT-TASK4.md](docs/AUDIT-TASK4.md)):
+Lighthouse, mobile, simulated slow 4G, production build (5 November 2026):
 
 | Page | Performance | Accessibility | Best Practices | SEO |
 |---|---|---|---|---|
@@ -69,87 +122,89 @@ Lighthouse, mobile, simulated slow 4G, production build, 5 Nov 2026 (full audit 
 | Hostels (3D) | 94 | 100 | 100 | 100 |
 | Tamil homepage | 94 | 100 | 100 | 100 |
 
-For comparison, the existing srmist.edu.in homepage scored 49 / 81 / 77 / 85 in the same test (386 requests, 10 MB).
+The existing srmist.edu.in homepage scored 49 / 81 / 77 / 85 in the same test. Full results are in
+[docs/AUDIT.md](docs/AUDIT.md).
 
-- **Accessibility:** every page type passes axe-core (WCAG 2.2 AA); one `h1` per page; a skip link first; visible focus rings; 44 px tap targets; no sideways scrolling from 360 px up.
-- **JavaScript:** about 139 kB on the homepage's first load (budget 180 kB). 3D, motion libraries, the chat panel and the intro frames load only when needed, and never in Lite Mode.
-- **Security:** Content-Security-Policy, `X-Frame-Options`, `X-Content-Type-Options`, `Permissions-Policy` and COOP headers; escaped JSON-LD; rate-limited API routes; no secrets in git. Open items (a Next.js 16 upgrade, Safari and Firefox testing) are listed in the audit.
-- **Reduced motion:** everything is static, nothing is pinned, and the intro and 3D stay off.
+- **Accessibility:** every page type passes axe-core (WCAG 2.2 AA), with a skip link, visible focus rings, 44 px tap
+  targets and no sideways scrolling from 360 px up. With reduced motion, nothing animates or pins.
+- **JavaScript:** about 139 kB on the homepage's first load. 3D, motion libraries, the chat panel and the intro frames
+  load only when needed.
+- **Security:** Content-Security-Policy and related headers, escaped JSON-LD, rate-limited API routes, and no secrets
+  in the repository.
 
 ## Tech stack
 
-- **Next.js 15** (App Router) with **TypeScript** (strict mode) and **React 19**
-- **Tailwind CSS v4**, with design tokens as CSS variables
-- **GSAP + ScrollTrigger** for scroll choreography and **Lenis** for smooth scroll, both loaded after page load and switched off in Lite Mode
-- **next-intl** for English, Tamil and Hindi
-- **Fuse.js** for instant client-side search; an optional free LLM (any OpenAI-compatible endpoint) for AI search and the assistant, called with plain `fetch`
-- **three.js, React Three Fiber and drei** for the 3D hostel finder and Walk SRM, loaded only when needed and never in Lite Mode
-- **next/image** for every image, served as AVIF or WebP; **next/font** for self-hosted fonts
-- Deploy target: **Vercel**
+| | |
+|---|---|
+| Framework | Next.js 15 (App Router), React 19, TypeScript (strict) |
+| Styling | Tailwind CSS v4 with design tokens as CSS variables |
+| Motion | GSAP + ScrollTrigger, Lenis smooth scroll (both loaded after the page, off in Lite Mode) |
+| 3D | three.js, React Three Fiber and drei, with custom shaders for the curved world, toon lighting and ink outlines |
+| Languages | next-intl (English, Tamil, Hindi) |
+| Search and AI | Fuse.js on the client; any OpenAI-compatible LLM endpoint (optional), called with plain `fetch` |
+| Images and fonts | next/image (AVIF/WebP) and next/font, self-hosted |
+| Hosting | Vercel |
 
-## Getting started
+## Run it locally
+
+Requires Node.js 20 or newer.
 
 ```sh
+git clone https://github.com/shreyascode11/SRM-Redesign.git
+cd SRM-Redesign
 npm install
-npm run dev          # http://localhost:3000
+npm run dev        # http://localhost:3000
 ```
+
+No API keys are needed: the site, search, programme matcher and rule-based assistant all work without them. Optional
+settings go in `.env.local` (see `.env.example`):
+
+| Variable | What it does |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | The site's public address, for the sitemap, SEO tags and link previews |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | Turn on AI search and the assistant's AI answers with any OpenAI-compatible endpoint (for example Groq) |
+| `ENQUIRY_WEBHOOK_URL` | Where the admission enquiry form sends submissions |
 
 | Command | What it does |
 |---|---|
-| `npm run build` | Production build; runs the content checks first |
-| `npm run lint` / `npm run typecheck` | ESLint (zero warnings allowed) and the TypeScript compiler |
-| `npm run check:content` | Validates every content file: references, TODO format, stats and translation coverage |
-| `npm run media:status` | Lists every photo and video the site expects and marks which have arrived |
-| `npm run i18n:review` | Exports every Tamil and Hindi string to `docs/translation-review.csv` for a native-speaker review |
-| `npm run build:verify` / `npm run start:verify` | Builds and serves into `.next-verify/`, so a running `npm run dev` is never disturbed |
-
-### Offline support and the kill switch
-
-In production, a hand-written service worker (`public/sw.js`) keeps key pages, programme pages people save, and the
-search index working offline. To ship a change to it, bump `VERSION` at the top: old caches are deleted on the next
-visit. If a bad worker ever ships, replace `public/sw.js` with this and deploy; every visitor's worker removes itself
-and its caches on their next visit:
-
-```js
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (e) => e.waitUntil(
-  caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith("srm-")).map((k) => caches.delete(k))))
-    .then(() => self.registration.unregister())
-    .then(() => self.clients.matchAll()).then((cs) => cs.forEach((c) => c.navigate(c.url))),
-));
-```
-
-No API keys are needed. The site, search, programme matcher and rule-based assistant all work offline. Optional settings (see `.env.example`):
-
-- `NEXT_PUBLIC_SITE_URL`: the canonical site address, for the sitemap, SEO tags and link previews. **Set it to the real https address in Vercel.** Without it, link previews point at `localhost:3000`.
-- `ENQUIRY_WEBHOOK_URL`: where the admission enquiry form sends submissions. Without it, the form says plainly that nothing was sent.
-- `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`: turn on AI search and the assistant's AI answers using any free OpenAI-compatible endpoint (tested with Groq: `https://api.groq.com/openai/v1` and `openai/gpt-oss-20b`). Keep the key in `.env.local` or the host's secret settings, never in git. Free tiers are rate-limited, so the site falls back to keyword search and rule-based answers if the AI is busy or off.
+| `npm run build` | Production build (runs the content checks first) |
+| `npm run lint` · `npm run typecheck` | ESLint (zero warnings allowed) and the TypeScript compiler |
+| `npm run check:content` | Validates every content file: references, stats and translation coverage |
+| `npm run media:status` | Lists every photo the site expects and which ones are present |
+| `npm run i18n:review` | Exports every Tamil and Hindi string to a CSV for a native-speaker review |
+| `node scripts/build-campus-walk.mjs <osm.json> <names.json>` | Rebuilds the Walk SRM world from an OpenStreetMap export |
 
 ## Project structure
 
 ```
-app/[locale]/        pages: home, programmes, programme detail, campuses, stories, admissions
-app/api/             ask (programme matcher), ai-search, assistant (Ask SRM), enquiry, search index
-components/          grail (homepage, intro, mascot), hostels (3D), walk (Walk SRM game), map, nav, footer, programme, assistant, ui
-content/             programmes, colleges, campuses, alumni, stories, research, stats, voices, startups, walk (JSON)
-content/i18n/        Tamil and Hindi translations of the content
-messages/            interface text in en / ta / hi
-lib/                 content loading, search, recommender, llm, assistant, Lite Mode, Parent Mode, map maths
-public/media/        photos and the intro frames (sources in content/media-credits.json); every file here is in use
-public/walk/         Walk SRM: the campus world (built by scripts/build-campus-walk.mjs from OpenStreetMap) and its cover
-scripts/             content checks, media status, map builders, translation review, link check, UI audit, A/B end-to-end check
-docs/                audits (AUDIT.md, AUDIT-TASK4.md), Task 3 and Task 5 notes, Walk SRM plan, link-preview checks, translation review
+app/[locale]/       pages: home, programmes, programme detail, compare, campuses, hostels, stories, research, walk, …
+app/api/            programme matcher, AI search, the Ask SRM assistant, enquiry form, search index, A/B results
+components/         homepage, navigation, programme pages, assistant, 3D hostel finder, map, walk (the game)
+content/            programmes, colleges, campuses, hostels, stories, research and the game's places and people (JSON)
+content/i18n/       Tamil and Hindi translations of the content
+messages/           interface text in English, Tamil and Hindi
+lib/                content loading, search, recommender, LLM client, assistant rules, A/B testing, map maths
+public/             photos, the intro frames, map data and the Walk SRM world
+scripts/            content checks, map and world builders, link checker, UI audit, A/B end-to-end test
+docs/               audit results, design reference, README images
 ```
 
-## Content you can trust
+## How the content stays accurate
 
-- **Every fact has a source.** Fees, eligibility, entrance exams and dates come from SRM's 2026 admission pages and its 2026–27 brochure. Each programme lists its sources.
-- **Unknown means TODO, never a guess.** Anything SRM hasn't published (for example MBBS fees, which appear only in the NEET bulletin) stays a marked `TODO`. It shows in development and is hidden on the live site.
-- **Photos are real.** They are SRM's own, from its websites, plus openly licensed photos from Wikimedia Commons, which show their author and licence on the image. Every file's origin is listed in [`content/media-credits.json`](content/media-credits.json).
-- **The demo walkthrough** for judges is in [DEMO.md](DEMO.md).
+- **Every fact has a source.** Fees, eligibility, entrance exams and dates come from SRM's 2026 admission pages and
+  its 2026–27 brochure, and each programme lists its sources.
+- **Unknown stays unknown.** Anything SRM hasn't published is marked `TODO` in the data and hidden on the live site,
+  never guessed.
+- **AI never invents facts.** The AI picks and explains; fees, dates and eligibility shown to the visitor always come
+  from the data files.
+- **Real photos.** SRM's own photos plus openly licensed images from Wikimedia Commons, each credited. Every file's
+  origin is listed in [content/media-credits.json](content/media-credits.json).
 
 ## Credits
 
-**Design and development: Shreyas** — [github.com/shreyascode11](https://github.com/shreyascode11)
+**Design and development: Shreyas** · [github.com/shreyascode11](https://github.com/shreyascode11)
 
-The SRM name, logo, emblem and photographs belong to SRM Institute of Science and Technology and are used here only for this design-challenge entry. Photos from Wikimedia Commons are credited on the images under their CC BY / CC BY-SA licences. Map data and the 3D campus footprints © OpenStreetMap contributors; India outline from Natural Earth (public domain). The look takes its structure and motion from the Grail app as a reference; the emblem treatment, kolam patterns, mascot, quests and every feature are original (see [CREDITS.md](CREDITS.md)).
+The SRM name, logo, emblem and photographs belong to SRM Institute of Science and Technology and are used only in this
+concept redesign. Map data © OpenStreetMap contributors (ODbL). The homepage's structure and motion take their cue from
+[Grail](https://grail-app.com) and Walk SRM from Abeto's [Messenger](https://messenger.abeto.co); no copy, art, models or
+code were taken from either. Fonts, data sources and other third-party assets are listed in [CREDITS.md](CREDITS.md).
