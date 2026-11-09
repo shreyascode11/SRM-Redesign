@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "Walk.meta" });
   const social = socialFor(locale, { title: t("title"), description: t("description"), path: "/walk", ownImage: true });
   // The link preview is a real frame from the game.
-  const image = { url: "/walk/cover.jpg", width: 1200, height: 630, alt: t("coverAlt") };
+  const image = { url: "/walk/cover-gate.jpg", width: 1200, height: 630, alt: t("coverAlt") };
   return {
     title: `${t("title")} — SRMIST`,
     description: t("description"),
@@ -56,7 +56,7 @@ export default async function WalkPage({ params }: Params) {
           labels={{ begin: t("hero.begin"), outfitFirst: t("hero.outfitFirst"), textTour: t("hero.textTour"), lite: t("hero.lite"), noWebgl: t("hero.noWebgl") }}
         />
         <Image
-          src="/walk/cover.jpg"
+          src="/walk/cover-gate.jpg"
           alt={t("meta.coverAlt")}
           width={1200}
           height={630}

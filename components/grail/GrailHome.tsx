@@ -436,7 +436,7 @@ export async function GrailHome() {
           {/* Walk SRM: the campus as a small walkable world (/walk). */}
           <div className="mt-10 grid items-center gap-6 overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#1f4fd8]/25 via-[#14101a] to-[#623562]/40 p-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:p-10">
             <Link href="/walk" className="block overflow-hidden rounded-2xl border border-white/15 md:order-2" tabIndex={-1} aria-hidden="true">
-              <Image src="/walk/cover.jpg" alt={walk("promo.imageAlt")} width={1200} height={630} sizes="(min-width: 768px) 40vw, 100vw" className="h-auto w-full transition-transform duration-500 hover:scale-[1.03]" />
+              <Image src="/walk/cover-gate.jpg" alt={walk("promo.imageAlt")} width={1200} height={630} sizes="(min-width: 768px) 40vw, 100vw" className="h-auto w-full transition-transform duration-500 hover:scale-[1.03]" />
             </Link>
             <div>
               <p className="text-sm font-semibold text-[#ffd166]">{walk("promo.kicker")}</p>

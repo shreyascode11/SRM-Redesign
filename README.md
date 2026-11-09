@@ -38,7 +38,7 @@ A redesign of [srmist.edu.in](https://www.srmist.edu.in/) built around the idea 
 | | |
 |---|---|
 | **3D hostel finder** | A 3D model of Kattankulathur built from OpenStreetMap. Tap a hostel and the camera flies there and opens its card: entrance photo, room types, this year's lowest fee, the office phone. A plain list does the same job. 12 hostel blocks are modelled; heights are approximate. |
-| **Walk SRM** | `/walk`: the real Kattankulathur campus as a small walkable world, in the style of Abeto's Messenger. Arrive at the gate as a student you dress yourself (our own anime-style students, built in code), walk real roads (keys, tap-to-walk with path-finding, or a thumb stick), talk to nine people at real buildings, and take six small quests that raise Build, Think, Connect and Grow. Every fact a character says comes from our content files; every building opens its page. Built from OpenStreetMap; the character is made in code (no downloaded model). Loads only after Begin; Lite Mode and no-WebGL get a full text tour. |
+| **Walk SRM** | `/walk` (or **🎮 Play 3D** in the header and the homepage hero): the real Kattankulathur campus as a small walkable game world, in an anime ink style inspired by Abeto's Messenger. You arrive at the pink **arch gate** (modelled on the site's intro video) as a student you dress yourself (our own anime-style students, built in code), walk real roads up the avenue to the **clock tower** on its roundabout (modelled on the team's video, with live-time clocks), and on to real buildings: the **University Building**, **Tech Park** and the orange **Tech Park 2**, hostels with balconies, **SRM Global Hospitals** and more. Walk, run (R or the 🏃 button) or **jump** (Space), choose your walking speed, and say hi to the 16 students walking the roads: they wave, answer your emotes and tell you where they're going. Talk to nine people at real buildings and take six small quests that raise Build, Think, Connect and Grow. Every fact a character says comes from our content files; every building opens its page. Built from OpenStreetMap at 0.65 scale so walks stay short (heights are real); places OSM only marks with a pin, like the hospitals, get approximate blocks. Loads only after Begin; Lite Mode and no-WebGL get a full text tour. |
 | **Campus map** | India in 3D with all six campuses and three sister universities. Pick your city to see how far each campus is (your location never leaves your device). |
 | **360° · VR tour** | SRM's own virtual tour opens inside the page, with fullscreen and headset support (VR not yet tried on a real headset). |
 | **Hostels, student life, research** | Full pages with photos, 2026-27 fee tables, contacts, mess timings, clubs, counselling, research centres and the patent register, all sourced from SRM's pages. |
@@ -83,7 +83,7 @@ For comparison, the existing srmist.edu.in homepage scored 49 / 81 / 77 / 85 in 
 - **GSAP + ScrollTrigger** for scroll choreography and **Lenis** for smooth scroll, both loaded after page load and switched off in Lite Mode
 - **next-intl** for English, Tamil and Hindi
 - **Fuse.js** for instant client-side search; an optional free LLM (any OpenAI-compatible endpoint) for AI search and the assistant, called with plain `fetch`
-- **three.js, React Three Fiber and drei** for the 3D hostel finder, loaded only when the section is near and never in Lite Mode
+- **three.js, React Three Fiber and drei** for the 3D hostel finder and Walk SRM, loaded only when needed and never in Lite Mode
 - **next/image** for every image, served as AVIF or WebP; **next/font** for self-hosted fonts
 - Deploy target: **Vercel**
 
@@ -130,14 +130,15 @@ No API keys are needed. The site, search, programme matcher and rule-based assis
 ```
 app/[locale]/        pages: home, programmes, programme detail, campuses, stories, admissions
 app/api/             ask (programme matcher), ai-search, assistant (Ask SRM), enquiry, search index
-components/          grail (homepage, intro, mascot), hostels (3D), map, nav, footer, programme, assistant, ui
-content/             programmes, colleges, campuses, alumni, stories, research, stats, voices, startups (JSON)
+components/          grail (homepage, intro, mascot), hostels (3D), walk (Walk SRM game), map, nav, footer, programme, assistant, ui
+content/             programmes, colleges, campuses, alumni, stories, research, stats, voices, startups, walk (JSON)
 content/i18n/        Tamil and Hindi translations of the content
 messages/            interface text in en / ta / hi
 lib/                 content loading, search, recommender, llm, assistant, Lite Mode, Parent Mode, map maths
-public/media/        photos and the intro frames (sources in content/media-credits.json)
+public/media/        photos and the intro frames (sources in content/media-credits.json); every file here is in use
+public/walk/         Walk SRM: the campus world (built by scripts/build-campus-walk.mjs from OpenStreetMap) and its cover
 scripts/             content checks, media status, map builders, translation review, link check, UI audit, A/B end-to-end check
-docs/                audits (AUDIT.md, AUDIT-TASK4.md), Task 3 notes, translation review
+docs/                audits (AUDIT.md, AUDIT-TASK4.md), Task 3 and Task 5 notes, Walk SRM plan, link-preview checks, translation review
 ```
 
 ## Content you can trust
