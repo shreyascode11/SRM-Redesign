@@ -16,7 +16,7 @@ const phi = (z: number) => {
  * Two-proportion z-test of variant B against A (two-sided). Returns rates, the relative lift of B over A, the p-value
  * and a plain verdict: "keep running" until both variants have MIN_VIEWS views, then B/A wins at p < 0.05, else no difference.
  */
-export function compare(a: { views: number; goals: number }, b: { views: number; goals: number }) {
+function compare(a: { views: number; goals: number }, b: { views: number; goals: number }) {
   const ra = a.views ? a.goals / a.views : 0;
   const rb = b.views ? b.goals / b.views : 0;
   const pooled = a.views + b.views ? (a.goals + b.goals) / (a.views + b.views) : 0;

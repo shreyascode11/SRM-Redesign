@@ -10,7 +10,7 @@ import { Rise } from "./Rise";
  * exactly as they were; only the presentation changes.
  */
 
-export { Crest, KOLAM_VARIANTS, STAT_COLORS } from "./Crest";
+export { Crest } from "./Crest";
 
 /** The page's <main>: switches the theme on and wires the motion (rising headings, sheet entrances). */
 export function GrailPage({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -23,7 +23,7 @@ export function GrailPage({ children, className = "" }: { children: React.ReactN
 }
 
 /** Small labels in the top corners of a chapter: what it is on the left, its level on the right. */
-export async function Corner({ kicker, level }: { kicker: string; level: number }) {
+async function Corner({ kicker, level }: { kicker: string; level: number }) {
   const t = await getTranslations("Grail");
   return (
     <div className="flex justify-between gap-4 text-sm font-medium opacity-80">

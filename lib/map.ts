@@ -3,7 +3,6 @@ import projection from "@/content/map/projection.json";
 import { getContent, isTodo, type Campus } from "./content";
 import { project, withOrigin } from "./geo";
 
-export { haversineKm, project, roundKm, withOrigin } from "./geo";
 
 /**
  * Campus map data for the client (server-side; keeps content JSON out of the bundle).

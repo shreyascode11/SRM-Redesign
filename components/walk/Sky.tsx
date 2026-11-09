@@ -57,7 +57,7 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-export type SkyColors = { top: string; horizon: string; cloud: string; cloudShade: string; night: number };
+type SkyColors = { top: string; horizon: string; cloud: string; cloudShade: string; night: number };
 
 export function Sky({ colors }: { colors: SkyColors }) {
   const mesh = useRef<THREE.Mesh>(null);

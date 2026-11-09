@@ -10,7 +10,7 @@ type Props = {
   fallback?: React.ReactNode;
 };
 
-export function Todo({ note, fallback = null }: Props) {
+function Todo({ note, fallback = null }: Props) {
   if (process.env.NODE_ENV === "production") return <>{fallback}</>;
   return (
     <mark className="rounded-sm bg-[#ffd400] px-1 font-mono text-[0.8em] text-ink outline-2 outline-dashed outline-ink">

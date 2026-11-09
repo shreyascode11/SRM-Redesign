@@ -257,20 +257,6 @@ html:has(dialog[open]:modal) {
   line-height: 1.1;
 }
 
-/* ── Act colours (each means something): Learn = institution blue, Leap = ink stage for student work,
-      Lead = canopy green (the tree in full leaf).
-      Contrast on each: paper ≥ 13.9:1, muted ≥ 8.3:1, links ≥ 7.8:1. ── */
-[data-act="leap"] {
-  --bg: #0a0a0d;
-  --line-subtle: #23232b;
-}
-[data-act="lead"] {
-  --bg: #0c2a1c;
-  --fg-muted: #b9c9bf;
-  --line: #6e8f7c;
-  --line-subtle: #1d4430;
-}
-
 @media (width < 25rem) {
   :lang(ta) .menu-label {
     position: absolute;
@@ -279,78 +265,6 @@ html:has(dialog[open]:modal) {
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-}
-
-/* ── The Living Tree. --p (0..1) is set by TreeScroll; each piece reads its own window. ── */
-.tree-seg {
-  fill: none;
-  stroke: var(--tree);
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  /* 1 = hidden … 0 = fully drawn, linear across [--s, --e] */
-  stroke-dashoffset: clamp(0, calc((var(--e) - var(--p)) / (var(--e) - var(--s))), 1);
-}
-.tree-roots .tree-seg {
-  stroke: var(--fg-muted);
-}
-.tree-leaf {
-  fill: var(--tree);
-  transform-box: fill-box;
-  transform-origin: center;
-  scale: clamp(0, calc((var(--p) - var(--s)) * 25), 1);
-}
-.tree-ground {
-  stroke: var(--line);
-  stroke-width: 1;
-  stroke-dasharray: 2 4;
-}
-.tree-seed {
-  fill: var(--tree);
-}
-.tree-bar {
-  background: var(--leaf-green-300);
-  transform-origin: left;
-  transform: scaleX(var(--p));
-}
-.living-tree {
-  opacity: 0;
-  transition: opacity 300ms var(--ease-leap);
-}
-[data-tree-visible="true"] .living-tree {
-  opacity: 1;
-}
-/* Hero seed (§1.1): the tree before it grows; a gentle pulse that stops under reduced motion. */
-.hero-seed {
-  animation: seed-pulse 2.4s var(--ease-leap) infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-@keyframes seed-pulse {
-  0%, 100% { scale: 1; opacity: 1; }
-  50% { scale: 1.35; opacity: 0.7; }
-}
-/* The tree floats over every act colour, so it keeps its own colours whichever act is behind it. */
-.living-tree {
-  --tree: var(--leaf-green-300);
-  --fg-muted: #9aa6c8;
-  --line: #6c7bb0;
-}
-
-/* Reduced motion / Lite Mode: no growth animation — the tree is shown fully grown (§5 rules). */
-@media (prefers-reduced-motion: reduce) {
-  .living-tree svg {
-    --p: 1 !important;
-  }
-}
-[data-motion="reduce"] .living-tree svg {
-  --p: 1 !important;
-}
-
-@media print {
-  .living-tree,
-  .tree-bar {
-    display: none;
   }
 }
 
@@ -369,83 +283,6 @@ html.lenis body {
 }
 .lenis.lenis-stopped {
   overflow: hidden;
-}
-
-/* Act title fragments: each letter = top half + bottom half. Negative insets so tight leading never clips glyphs. */
-.act-letter {
-  position: relative;
-  display: inline-block;
-}
-.act-frag {
-  display: inline-block;
-  will-change: transform, opacity;
-}
-.act-frag-top {
-  clip-path: inset(-50% -15% 50% -15%);
-}
-.act-frag-bottom {
-  position: absolute;
-  top: 0;
-  left: 0;
-  clip-path: inset(50% -15% -50% -15%);
-}
-
-/* Pinned act title becomes a watermark: everything else in the act stacks above it. */
-[data-act] > header,
-[data-act] > :not(header, [data-curtain], .sr-only) {
-  position: relative;
-  z-index: 1;
-}
-[data-act] > header > :not([data-act-title]) {
-  position: relative;
-  z-index: 1;
-}
-[data-act-title] {
-  position: relative;
-  z-index: 0;
-}
-
-/* Curtains: the previous act's colour lifting off the new one. display:none until motion runs. */
-.act-curtain {
-  display: none;
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 100vh;
-  z-index: 2;
-  pointer-events: none;
-  background: var(--curtain, transparent);
-}
-[data-act="leap"] {
-  --curtain: var(--srm-blue-900);
-}
-[data-act="lead"] {
-  --curtain: #0a0a0d;
-}
-
-/* College strip hover reveal (VCU): pure CSS, mouse users with motion on only. Touch/reduced = full photo. */
-@media (hover: hover) and (pointer: fine) {
-  [data-motion="full"] [data-college-strip] .college-media {
-    opacity: 0.35;
-    scale: 1.08;
-    transition:
-      opacity 500ms var(--ease-leap),
-      scale 900ms var(--ease-leap);
-  }
-  [data-motion="full"] [data-college-strip] a:is(:hover, :focus) .college-media {
-    opacity: 1;
-    scale: 1;
-  }
-  [data-motion="full"] [data-college-strip] .college-outcome {
-    translate: 0 0.5rem;
-    transition: translate 500ms var(--ease-leap);
-  }
-  [data-motion="full"] [data-college-strip] a:is(:hover, :focus) .college-outcome {
-    translate: 0 0;
-  }
-  [data-motion="full"] [data-college-strip] {
-    cursor: grab;
-  }
 }
 
 /* Leaf ripple (Hull) */
@@ -504,38 +341,6 @@ html.lenis body {
 }
 .cursor-ring[data-state="label"] > span {
   opacity: 1;
-}
-
-/* ═══ Step 8: Camber Racing pinned scene ═══
-   data-motion is set before first paint, so the tall track never causes a layout shift.
-   Static (reduced motion / Lite / no JS): a normal full-height block, every callout visible. */
-.camber-sticky {
-  position: relative;
-  min-height: calc(100svh - 4rem);
-}
-[data-motion="full"] .camber-track {
-  height: 340svh;
-}
-[data-motion="full"] .camber-sticky {
-  position: sticky;
-  top: 4rem;
-  height: calc(100svh - 4rem);
-}
-.camber-callout {
-  transition:
-    opacity 450ms var(--ease-leap),
-    translate 450ms var(--ease-leap);
-}
-.camber-track[data-live] .camber-callout:not([data-on]) {
-  opacity: 0;
-  translate: 0 0.75rem;
-}
-.camber-progress {
-  transform-origin: left;
-  transform: scaleX(var(--camber-p, 1));
-}
-.camber-track[data-live]:not([data-started]) .camber-hint {
-  display: block;
 }
 
 /* ═══ Step 9: campus constellation ═══
@@ -738,20 +543,6 @@ form[role="search"] input::-webkit-search-cancel-button {
 }
 
 /* ═══ Visual layer ═══ */
-
-/* Rank chart: each dot grows in as its row scrolls into view. Browsers without scroll timelines just show the dots. */
-@supports (animation-timeline: view()) {
-  [data-motion="full"] .rank-node {
-    animation: rank-node-in linear both;
-    animation-timeline: view();
-    animation-range: entry 20% entry 80%;
-  }
-}
-@keyframes rank-node-in {
-  from {
-    scale: 0;
-  }
-}
 
 @keyframes campus-map-flat {
   to {

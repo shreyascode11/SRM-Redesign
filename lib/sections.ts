@@ -9,7 +9,6 @@ export const SECTION = {
   research: "research",
   lead: "lead",
   alumni: "alumni",
-  voices: "voices",
   placements: "placements",
   explore: "explore",
   thisWeek: "this-week",

@@ -21,7 +21,7 @@ export const dropAt = (x: number, z: number) => {
 
 // A three-step toon ramp: flat, friendly shading.
 let ramp: THREE.DataTexture | null = null;
-export const toonRamp = () => {
+const toonRamp = () => {
   if (ramp) return ramp;
   const data = new Uint8Array([172, 172, 172, 255, 255, 255, 255, 255]);
   ramp = new THREE.DataTexture(data, 2, 1, THREE.RGBAFormat);

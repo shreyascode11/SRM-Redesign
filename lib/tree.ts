@@ -9,9 +9,9 @@
  *   leaves   → Act III (0.66 – 1)
  */
 
-export type TreeSegment = { d: string; width: number; s: number; e: number };
-export type TreeLeaf = { cx: number; cy: number; rx: number; ry: number; rotate: number; s: number; opacity: number };
-export type TreeShape = {
+type TreeSegment = { d: string; width: number; s: number; e: number };
+type TreeLeaf = { cx: number; cy: number; rx: number; ry: number; rotate: number; s: number; opacity: number };
+type TreeShape = {
   viewBox: string;
   ground: number;
   base: { x: number; y: number };
@@ -134,73 +134,4 @@ export function generateTree(seed = 2026): TreeShape {
   const viewBox = `${minX} ${minY} ${Math.ceil(Math.max(...xs) + pad) - minX} ${Math.ceil(Math.max(...ys) + pad) - minY}`;
 
   return { viewBox, ground: GROUND, base, roots, trunk, branches, leaves, tips };
-}
-
-export type Canopy = {
-  viewBox: string;
-  trunk: TreeSegment[];
-  branches: TreeSegment[];
-  /** A thin stalk from the nearest branch tip to each leaf. */
-  stems: string[];
-  /** Leaf positions as fractions (0..1) of the viewBox, in the order filled (centre of the crown outward). */
-  slots: { x: number; y: number }[];
-  /** The visitor's leaf: above the crown, where there's room for a label. */
-  apex: { x: number; y: number };
-};
-
-/**
- * The same tree as the corner widget (same seed), fully grown, with `slots` leaf positions spread over its crown.
- * Leaves sit on a hexagonal grid inside an ellipse around the branch tips, so they're evenly spaced and each gets
- * room for a 44 px tap target, with a little seeded jitter so it doesn't read as a grid. Deterministic, built on the server, original: never a trace of SRM's emblem.
- */
-export function generateCanopy(slots: number, seed = 2026): Canopy {
-  const tree = generateTree(seed);
-  const xs = tree.tips.map((t) => t.x);
-  const ys = tree.tips.map((t) => t.y);
-  // A full, rounded crown sitting on the branches: wider and much taller than the bare branch tips, so 27 leaves each
-  // get room for a 44 px target. Stems reach from the nearest tip to each leaf.
-  const rx = ((Math.max(...xs) - Math.min(...xs)) / 2) * 1.7 + 22;
-  const ry = Math.max(((Math.max(...ys) - Math.min(...ys)) / 2) * 2.4 + 30, rx * 0.62);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-  const cy = Math.max(...ys) - ry * 0.78;
-  const rand = mulberry32(seed + 1);
-  let points: { x: number; y: number }[] = [];
-  // Spacing for `slots` hex cells to fill the ellipse; tightened slightly until enough cells fall inside it.
-  for (let d = Math.sqrt((Math.PI * rx * ry) / (slots * 0.866)); points.length < slots; d *= 0.95) {
-    const cells: { x: number; y: number; r: number }[] = [];
-    for (let row = 0, y = cy - ry; y <= cy + ry; row++, y += d * 0.866)
-      for (let x = cx - rx + (row % 2 ? d / 2 : 0); x <= cx + rx; x += d) {
-        const r = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
-        if (r <= 1) cells.push({ x, y, r });
-      }
-    points = cells
-      .sort((a, b) => a.r - b.r)
-      .slice(0, slots)
-      .map((c) => ({ x: c.x + (rand() - 0.5) * d * 0.16, y: c.y + (rand() - 0.5) * d * 0.16 }));
-  }
-  const apex = { x: cx, y: cy - ry - 14 };
-  const stems = points.map((p) => {
-    const tip = tree.tips.reduce((a, b) => (Math.hypot(b.x - p.x, b.y - p.y) < Math.hypot(a.x - p.x, a.y - p.y) ? b : a));
-    return curve(tip.x, tip.y, p.x, p.y, 0.15);
-  });
-
-  // Crown and trunk only: the roots belonged to Act I, and leaving them out gives the crown the height.
-  const nums = [...tree.trunk, ...tree.branches].flatMap((sg) => [...sg.d.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => Number(m[0])));
-  const allX = [...nums.filter((_, i) => i % 2 === 0), ...points.map((p) => p.x), apex.x];
-  const allY = [...nums.filter((_, i) => i % 2 === 1), ...points.map((p) => p.y), apex.y];
-  const pad = 10;
-  const minX = Math.floor(Math.min(...allX) - pad);
-  const minY = Math.floor(Math.min(...allY) - pad);
-  const w = Math.ceil(Math.max(...allX) + pad) - minX;
-  const h = Math.ceil(Math.max(...allY) + pad) - minY;
-  const frac = (p: { x: number; y: number }) => ({ x: r3((p.x - minX) / w), y: r3((p.y - minY) / h) });
-
-  return {
-    viewBox: `${minX} ${minY} ${w} ${h}`,
-    trunk: tree.trunk,
-    branches: tree.branches,
-    stems,
-    slots: points.map(frac),
-    apex: frac(apex),
-  };
 }

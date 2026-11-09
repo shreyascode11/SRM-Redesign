@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { Link } from "@/lib/i18n";
 
-export const isExternal = (href: string) => /^(https?:|tel:|mailto:)/.test(href);
+const isExternal = (href: string) => /^(https?:|tel:|mailto:)/.test(href);
 
 type Props = Omit<ComponentProps<"a">, "href"> & {
   href: string;

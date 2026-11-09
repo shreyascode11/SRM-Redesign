@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 /**
@@ -18,28 +18,4 @@ export function findMedia(rel: string | undefined): string | null {
   const base = rel.slice(0, -ext.length);
   for (const alt of IMAGE_EXTS) if (existsSync(path.join(PUBLIC, base + alt))) return `/${base + alt}`;
   return null;
-}
-
-export type FrameSequence = { count: number; sm: string[]; lg: string[] };
-
-/**
- * Scroll-scrubbed image sequence: public/<dir>/sm/*.{webp,jpg,png,svg} (~720w) and <dir>/lg/* (~1440w),
- * sorted by filename. Produced from one video by scripts/make-sequence.sh. Null if not supplied.
- */
-export function findSequence(dir: string | undefined): FrameSequence | null {
-  if (!dir) return null;
-  const list = (size: "sm" | "lg") => {
-    const abs = path.join(PUBLIC, dir, size);
-    if (!existsSync(abs)) return [];
-    return readdirSync(abs)
-      .filter((f) => /\.(webp|jpe?g|png|avif|svg)$/i.test(f))
-      .sort()
-      .map((f) => `/${dir}/${size}/${f}`);
-  };
-  const sm = list("sm");
-  const lg = list("lg");
-  const count = Math.max(sm.length, lg.length);
-  if (count < 2) return null;
-  // If only one size was supplied, use it for both.
-  return { count, sm: sm.length ? sm : lg, lg: lg.length ? lg : sm };
 }

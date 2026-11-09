@@ -67,7 +67,7 @@ export const newGame = (start: XZ, people: string[]): Game => ({
 });
 
 export type Progress = { active: Record<string, number>; done: string[]; tracked: string | null };
-export const EMPTY_PROGRESS: Progress = { active: {}, done: [], tracked: null };
+const EMPTY_PROGRESS: Progress = { active: {}, done: [], tracked: null };
 
 const PROGRESS_KEY = "srm-walk-progress";
 const OUTFIT_KEY = "srm-walk-outfit";

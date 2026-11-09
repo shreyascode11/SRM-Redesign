@@ -25,7 +25,7 @@ export type World = {
   scale?: number;
 };
 
-export const inside = (x: number, z: number, poly: XZ[]) => {
+const inside = (x: number, z: number, poly: XZ[]) => {
   let c = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const [xi, zi] = poly[i]!;

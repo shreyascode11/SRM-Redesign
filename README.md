@@ -170,7 +170,6 @@ settings go in `.env.local` (see `.env.example`):
 | `npm run build` | Production build (runs the content checks first) |
 | `npm run lint` · `npm run typecheck` | ESLint (zero warnings allowed) and the TypeScript compiler |
 | `npm run check:content` | Validates every content file: references, stats and translation coverage |
-| `npm run media:status` | Lists every photo the site expects and which ones are present |
 | `npm run i18n:review` | Exports every Tamil and Hindi string to a CSV for a native-speaker review |
 | `node scripts/build-campus-walk.mjs <osm.json> <names.json>` | Rebuilds the Walk SRM world from an OpenStreetMap export |
 

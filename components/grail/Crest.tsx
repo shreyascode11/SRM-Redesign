@@ -1,8 +1,8 @@
 import type { KolamVariant } from "@/lib/kolam";
 import { Kolam } from "./Kolam";
 
-export const KOLAM_VARIANTS: KolamVariant[] = ["lattice", "rings", "petals", "flower"];
-export const STAT_COLORS = ["var(--stat-build)", "var(--stat-think)", "var(--stat-connect)", "var(--stat-grow)"];
+const KOLAM_VARIANTS: KolamVariant[] = ["lattice", "rings", "petals", "flower"];
+const STAT_COLORS = ["var(--stat-build)", "var(--stat-think)", "var(--stat-connect)", "var(--stat-grow)"];
 
 /** A kolam crest that's stable for a given key (a college, a centre), so the same thing always gets the same crest. */
 export function Crest({ seed, className = "size-10" }: { seed: string; className?: string }) {

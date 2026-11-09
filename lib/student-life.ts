@@ -8,7 +8,7 @@ import type messages from "@/messages/en.json";
 type Person = { name: string; email?: string; phone?: string };
 type LifeMessages = (typeof messages)["Life"];
 
-export type StudentLife = {
+type StudentLife = {
   sources: Record<LifeSection, string>;
   stats: Record<"acres" | "clubs" | "houses" | "events" | "counselling", string>;
   photos: Record<"holistic" | "cycling" | "transport" | "affairs" | "wellness" | "community", string>;

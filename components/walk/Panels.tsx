@@ -521,7 +521,7 @@ export function EmoteWheel({ script, onPick, onClose }: { script: WalkScript; on
   );
 }
 
-export function Panel({ title, onClose, closeLabel, wide, children }: { title: string; onClose: () => void; closeLabel: string; wide?: boolean; children: React.ReactNode }) {
+function Panel({ title, onClose, closeLabel, wide, children }: { title: string; onClose: () => void; closeLabel: string; wide?: boolean; children: React.ReactNode }) {
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => close.current?.focus(), []);
   return (

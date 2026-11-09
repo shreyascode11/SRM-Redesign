@@ -4,7 +4,7 @@
  * Returns plain geometry; components/grail/Kolam.tsx draws it.
  */
 export type KolamVariant = "lattice" | "rings" | "petals" | "flower";
-export type KolamShape = { size: number; dots: { x: number; y: number }[]; paths: string[] };
+type KolamShape = { size: number; dots: { x: number; y: number }[]; paths: string[] };
 
 const S = 20; // dot spacing
 const r1 = (n: number) => Math.round(n * 10) / 10;

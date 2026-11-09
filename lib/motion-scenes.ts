@@ -29,19 +29,11 @@ export function startMotion(): () => void {
     lenis.destroy();
   });
 
-  const mm = gsap.matchMedia();
   const ctx = gsap.context(() => {
-    cleanups.push(...actTitles(mm));
-    curtains();
     cleanups.push(...counters());
-    treeFinale();
   });
-  cleanups.push(() => {
-    mm.revert();
-    ctx.revert();
-  });
+  cleanups.push(() => ctx.revert());
   cleanups.push(magneticButtons());
-  cleanups.push(dragStrip());
   cleanups.push(cursor());
 
   ScrollTrigger.refresh();
@@ -49,121 +41,6 @@ export function startMotion(): () => void {
     for (const fn of cleanups.reverse()) fn();
     ScrollTrigger.getAll().forEach((t) => t.kill());
   };
-}
-
-const rand = gsap.utils.random;
-
-/**
- * Act titles (RISD "incomplete → complete"): each letter is cut into two fragments that fly in from
- * scattered positions and lock together as the title scrolls in. Desktop: the assembled title then pins
- * as a faint watermark while the act's content scrolls over it.
- */
-function actTitles(mm: gsap.MatchMedia): (() => void)[] {
-  const restores: (() => void)[] = [];
-  document.querySelectorAll<HTMLElement>("[data-act-title]").forEach((title) => {
-    const text = title.textContent ?? "";
-    const original = title.innerHTML;
-
-    // Screen readers keep the plain word; the fragments are aria-hidden.
-    const sr = document.createElement("span");
-    sr.className = "sr-only";
-    sr.textContent = text;
-    const visual = document.createElement("span");
-    visual.setAttribute("aria-hidden", "true");
-    for (const ch of text) {
-      const letter = document.createElement("span");
-      letter.className = "act-letter";
-      for (const half of ["act-frag-top", "act-frag-bottom"]) {
-        const frag = document.createElement("span");
-        frag.className = `act-frag ${half}`;
-        frag.textContent = ch;
-        letter.append(frag);
-      }
-      visual.append(letter);
-    }
-    title.replaceChildren(sr, visual);
-    restores.push(() => {
-      title.innerHTML = original;
-    });
-
-    gsap.fromTo(
-      title.querySelectorAll(".act-frag"),
-      {
-        x: () => rand(-0.3, 0.3) * window.innerWidth,
-        y: () => rand(-180, 180),
-        rotate: () => rand(-75, 75),
-        opacity: 0,
-      },
-      {
-        x: 0,
-        y: 0,
-        rotate: 0,
-        opacity: 1,
-        ease: "none",
-        stagger: { each: 0.025, from: "random" },
-        scrollTrigger: { trigger: title, start: "top 92%", end: "top 30%", scrub: 0.6, invalidateOnRefresh: true },
-      },
-    );
-
-    const section = title.closest<HTMLElement>("[data-act]");
-    mm.add("(min-width: 64rem)", () => {
-      if (!section) return;
-      ScrollTrigger.create({
-        trigger: title,
-        start: "top 14%",
-        endTrigger: section,
-        end: "bottom bottom",
-        pin: true,
-        pinSpacing: false,
-      });
-      gsap.to(title, {
-        // Faint enough that the word never competes with the text scrolling over it.
-        opacity: 0.06,
-        ease: "none",
-        scrollTrigger: { trigger: title, start: "top 14%", end: "+=35%", scrub: true },
-      });
-    });
-  });
-  return restores;
-}
-
-/**
- * Act transitions (Guildhall): the previous act's colour hangs over the top of the new act like a curtain
- * and lifts away (scaleY → 0) as you scroll in. The curtain element is display:none until this runs.
- */
-function curtains() {
-  document.querySelectorAll<HTMLElement>("[data-curtain]").forEach((curtain) => {
-    const section = curtain.parentElement;
-    if (!section) return;
-    gsap.set(curtain, { display: "block", scaleY: 1, transformOrigin: "50% 0%" });
-    gsap.to(curtain, {
-      scaleY: 0,
-      ease: "none",
-      scrollTrigger: { trigger: section, start: "top bottom", end: "top 25%", scrub: true },
-    });
-  });
-}
-
-/**
- * Tree finale (end of Act III): the branches draw in, the leaves pop out, and the visitor's leaf arrives last and
- * pulses three times. Only when it starts below the screen, so nothing that's already visible disappears.
- */
-function treeFinale() {
-  const root = document.querySelector<HTMLElement>("[data-tree-finale]");
-  if (!root || root.getBoundingClientRect().top < window.innerHeight) return;
-  const branches = root.querySelectorAll(".finale-branch");
-  const leaves = root.querySelectorAll(".finale-leaf, .finale-dot");
-  const apex = root.querySelector(".finale-apex");
-  gsap.set(branches, { strokeDasharray: 1, strokeDashoffset: 1 });
-  gsap.set(leaves, { scale: 0, opacity: 0, transformOrigin: "50% 100%" });
-  if (apex) gsap.set(apex, { scale: 0, opacity: 0 });
-  const tl = gsap.timeline({ scrollTrigger: { trigger: root, start: "top 55%", once: true } });
-  tl.to(branches, { strokeDashoffset: 0, duration: 1.1, ease: "power2.out", stagger: 0.006 }).to(
-    leaves,
-    { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2)", stagger: { each: 0.025, from: "random" } },
-    "-=0.5",
-  );
-  if (apex) tl.to(apex, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2)" }).to(apex, { scale: 1.08, duration: 0.4, yoyo: true, repeat: 5, ease: "sine.inOut" });
 }
 
 /**
@@ -260,57 +137,6 @@ function magneticButtons(): () => void {
     });
   });
   return () => offs.forEach((f) => f());
-}
-
-/** Mouse drag-to-scroll on the college strip (touch and trackpads already scroll it natively). */
-function dragStrip(): () => void {
-  const strip = document.querySelector<HTMLElement>("[data-college-strip]");
-  if (!strip) return () => {};
-  let startX = 0;
-  let startScroll = 0;
-  let dragging = false;
-  let moved = false;
-  const down = (e: PointerEvent) => {
-    if (e.pointerType !== "mouse" || e.button !== 0) return;
-    dragging = true;
-    moved = false;
-    startX = e.clientX;
-    startScroll = strip.scrollLeft;
-  };
-  const move = (e: PointerEvent) => {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    if (Math.abs(dx) > 5 && !moved) {
-      moved = true;
-      strip.style.scrollSnapType = "none";
-      strip.setPointerCapture(e.pointerId);
-    }
-    if (moved) strip.scrollLeft = startScroll - dx;
-  };
-  const up = () => {
-    dragging = false;
-    strip.style.scrollSnapType = "";
-  };
-  // A drag shouldn't also open the card it started on.
-  const click = (e: MouseEvent) => {
-    if (moved) {
-      e.preventDefault();
-      e.stopPropagation();
-      moved = false;
-    }
-  };
-  strip.addEventListener("pointerdown", down);
-  strip.addEventListener("pointermove", move);
-  strip.addEventListener("pointerup", up);
-  strip.addEventListener("pointercancel", up);
-  strip.addEventListener("click", click, true);
-  return () => {
-    strip.removeEventListener("pointerdown", down);
-    strip.removeEventListener("pointermove", move);
-    strip.removeEventListener("pointerup", up);
-    strip.removeEventListener("pointercancel", up);
-    strip.removeEventListener("click", click, true);
-  };
 }
 
 /**

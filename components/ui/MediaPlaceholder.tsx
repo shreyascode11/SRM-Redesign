@@ -5,7 +5,7 @@
 type Props = {
   /** What the real photo should show, e.g. "Kattankulathur campus aerial at dusk". Doubles as alt text. */
   description: string;
-  /** Target file the team should supply, e.g. "media/hero/poster.jpg". */
+  /** The file this placeholder stands in for, e.g. "media/campuses/kattankulathur.jpg". */
   file?: string;
   kind?: "photo" | "video";
   /** Background media: hidden from assistive tech (the real media will be decorative too). */

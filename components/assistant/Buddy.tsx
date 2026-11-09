@@ -3,7 +3,7 @@
  * site's lilac). Decorative: the button or heading beside it carries the name for screen readers. Moods are pure CSS
  * (idle blink and bob, wave, think); all of it stops under reduced motion or Lite Mode.
  */
-export type BuddyMood = "idle" | "think";
+type BuddyMood = "idle" | "think";
 
 export function Buddy({ mood = "idle", className = "" }: { mood?: BuddyMood; className?: string }) {
   return (

@@ -13,7 +13,6 @@
     "prebuild": "npm run check:content",
     "build:verify": "NEXT_DIST_DIR=.next-verify next build",
     "start:verify": "NEXT_DIST_DIR=.next-verify next start",
-    "media:status": "node scripts/media-status.mts",
     "i18n:review": "node scripts/i18n-review.mts"
   },
   "dependencies": {

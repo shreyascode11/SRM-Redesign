@@ -8,8 +8,3 @@ export function motionAllowed(): boolean {
   return document.documentElement.dataset.motion === "full";
 }
 
-/** Video and 3D are heavier than motion: off in Lite Mode even if the visitor allows motion. */
-export function heavyMediaAllowed(): boolean {
-  if (typeof document === "undefined") return false;
-  return document.documentElement.dataset.lite !== "on";
-}

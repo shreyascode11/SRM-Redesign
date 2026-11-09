@@ -51,10 +51,7 @@
         "The team is multidisciplinary, bringing together mechanical, electrical, electronics and computing students, led by captain Himanshu Kumar (ECE, final year)."
       ],
       "media": {
-        "photo": "media/camber/poster.jpg",
-        "sequence": "media/camber/sequence",
-        "video": "media/camber/run.mp4",
-        "model": "media/camber/car.glb"
+        "photo": "media/camber/poster.jpg"
       },
       "tags": [
         "mobility",
@@ -62,7 +59,6 @@
         "motorsport",
         "students"
       ],
-      "scene": "sequence",
       "sources": [
         "https://www.srmist.edu.in/srmists-team-camber-racing-claims-national-title-at-formula-bharat-2026/"
       ]

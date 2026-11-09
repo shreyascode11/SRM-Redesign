@@ -16,7 +16,7 @@
 export const LITE_STORAGE_KEY = "srm-lite";
 
 export type LiteReason = "save-data" | "slow-network" | "reduced-motion" | "user";
-export type LiteOverride = "on" | "off" | null;
+type LiteOverride = "on" | "off" | null;
 
 export type LiteState = {
   lite: boolean;

@@ -7,7 +7,6 @@ import siteData from "@/content/site.json";
 import statsData from "@/content/stats.json";
 import startupsData from "@/content/startups.json";
 import storiesData from "@/content/stories.json";
-import voicesData from "@/content/voices.json";
 import seniorsData from "@/content/seniors.json";
 import hiData from "@/content/i18n/hi.json";
 import taData from "@/content/i18n/ta.json";
@@ -18,7 +17,7 @@ import { isTodo, type OrTodo } from "./todo";
  * Typed access to content/*.json. Shapes are enforced at build time by scripts/check-content.mts (prebuild).
  * Server components only — importing this from a client component ships every JSON file to the browser.
  */
-export { isTodo, verified, type OrTodo, type Todo } from "./todo";
+export { isTodo, type OrTodo } from "./todo";
 
 export type CampusSlug =
   | "kattankulathur"
@@ -93,9 +92,9 @@ export type Campus = {
   photo: string;
 };
 
-export type CampusCluster = { id: "chennai" | "delhi"; name: string; members: CampusSlug[]; zoom: number };
+type CampusCluster = { id: "chennai" | "delhi"; name: string; members: CampusSlug[]; zoom: number };
 
-export type Alumnus = {
+type Alumnus = {
   slug: string;
   name: string;
   role: string;
@@ -107,8 +106,7 @@ export type Alumnus = {
 };
 
 /** A talk by a visiting leader (SRM's "Legacy Beyond Curriculum"): YouTube Short, played on demand. */
-export type Voice = { slug: string; name: string; role: string; title: string; youtubeId: string };
-export type Startup = { slug: string; name: string; logo: string };
+type Startup = { slug: string; name: string; logo: string };
 
 export type Story = {
   slug: string;
@@ -119,13 +117,11 @@ export type Story = {
   people: { name: string; role: string }[];
   facts: { key: string; label: string; value: string }[];
   body: string[];
-  media: { photo?: string; video?: string; model?: string; sequence?: string; poster?: { name: string; tagline: string } };
-  /** "sequence" = pinned scroll-scrubbed scene (Camber); default = standard panel. */
-  scene?: "sequence";
+  media: { photo?: string; poster?: { name: string; tagline: string } };
   tags: string[];
 };
 
-export type SrmEvent = {
+type SrmEvent = {
   slug: string;
   title: string;
   /** Display label, e.g. "25–28 Oct 2026". */
@@ -147,9 +143,9 @@ export type Stat = {
   decimals?: number;
 };
 
-export type NirfRank = { id: string; label: string; rank: number };
+type NirfRank = { id: string; label: string; rank: number };
 
-export type Mission = {
+type Mission = {
   slug: string;
   name: string;
   question: string;
@@ -161,25 +157,25 @@ export const site = siteData;
 export const programmes = programmesData.programmes as Programme[];
 export const colleges = collegesData.colleges as College[];
 export const campuses = campusesData.campuses as Campus[];
-export const campusClusters = campusesData.clusters as CampusCluster[];
-export const alumni = alumniData.alumni as Alumnus[];
+const campusClusters = campusesData.clusters as CampusCluster[];
+const alumni = alumniData.alumni as Alumnus[];
 export const stories = storiesData.stories as Story[];
-export const events = storiesData.events as SrmEvent[];
-export const missions = researchData.missions as Mission[];
+const events = storiesData.events as SrmEvent[];
+const missions = researchData.missions as Mission[];
 
-export const placements = {
+const placements = {
   season: statsData.placements.season,
   items: statsData.placements.items as Stat[],
 };
-export const researchStats = statsData.research.items as Stat[];
+const researchStats = statsData.research.items as Stat[];
 
 const currentNirfYear = statsData.nirf.current as "2025";
-export const nirf = {
+const nirf = {
   year: currentNirfYear,
   ranks: statsData.nirf.years[currentNirfYear].ranks as NirfRank[],
   source: statsData.nirf.years[currentNirfYear].source,
 };
-export const naacGrade = statsData.naac.grade;
+const naacGrade = statsData.naac.grade;
 
 /** Events still to come (or running today), as of the last time the page was built. */
 export const upcomingEvents = <T extends { end: string }>(list: T[]) => {
@@ -187,14 +183,6 @@ export const upcomingEvents = <T extends { end: string }>(list: T[]) => {
   return list.filter((e) => e.end >= today);
 };
 
-export const getProgramme = (slug: string) => programmes.find((p) => p.slug === slug);
-export const getCollege = (slug: string) => colleges.find((c) => c.slug === slug);
-export const getCampus = (slug: string) => campuses.find((c) => c.slug === slug);
-export const getStory = (slug: string) => stories.find((s) => s.slug === slug);
-export const featuredStory = getStory(storiesData.featured);
-export const studentWork = storiesData.studentWork
-  .map((slug) => getStory(slug))
-  .filter((s): s is Story => s !== undefined);
 
 // ── Localised content (build step 12) ────────────────────────────────────────────────────────────────────
 // content/i18n/{ta,hi}.json override display text by id. Anything missing falls back to English, and an
@@ -218,10 +206,9 @@ type Overrides = {
   phones?: Record<string, string>;
   site?: { status?: string; location?: string };
   seniors?: Record<string, { question?: string; answer?: string; senior?: string }>;
-  voices?: Record<string, { role?: string; title?: string }>;
 };
 
-export type SeniorThreadData = {
+type SeniorThreadData = {
   id: string;
   status: "answered" | "awaiting";
   question: string;
@@ -336,11 +323,8 @@ function build(o: Overrides | undefined) {
       };
     }),
     stories: ss,
-    voices: (voicesData.voices as Voice[]).map((v) => ({ ...v, role: pick(o?.voices?.[v.slug]?.role, v.role), title: pick(o?.voices?.[v.slug]?.title, v.title) })),
-    voicesSource: voicesData.source,
     startups: startupsData.startups as Startup[],
     startupsCount: startupsData.count,
-    startupsSource: startupsData.source,
     events,
     missions: ms,
     placements: { season: placements.season, items: stat(placements.items, o?.placements) },
@@ -357,7 +341,7 @@ function build(o: Overrides | undefined) {
   };
 }
 
-export type LocalContent = ReturnType<typeof build>;
+type LocalContent = ReturnType<typeof build>;
 const cache = new Map<string, LocalContent>();
 
 /** All display content in the visitor's language (English fallback per field). Server-side only. */

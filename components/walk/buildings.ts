@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { World, XZ } from "@/lib/walk/world";
 
 /**
@@ -33,7 +32,7 @@ const STYLES: Record<string, Style> = {
 };
 const BY_KIND = ["other", "academic", "hostel", "food", "academic", "health", "faith", "workshop", "academic", "homes"];
 
-export const styleOf = (b: World["buildings"][number]): Style => {
+const styleOf = (b: World["buildings"][number]): Style => {
   if (b.n === "tech-park") return STYLES.techPark!;
   if (b.n === "tech-park-2") return STYLES.orangeTower!;
   if (b.n === "university-building") return STYLES.ub!;
@@ -621,4 +620,3 @@ function col(h: string) {
   return new THREE.Color(h);
 }
 
-export const mergeSafe = (geos: THREE.BufferGeometry[]) => (geos.length ? mergeGeometries(geos) : null);

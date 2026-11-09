@@ -140,68 +140,19 @@
     "status": "{count, plural, =0 {No programme matches that yet.} one {# programme matches.} other {# programmes match.}}",
     "noMatch": "Not sure where you fit? Talk to a person:",
     "years": "{count, plural, one {# yr} other {# yrs}}",
-    "audienceLabel": "Explore as",
-    "students": "Students",
-    "parents": "Parents",
-    "international": "International",
-    "research": "Research",
-    "alumni": "Alumni",
-    "pauseVideo": "Pause background video",
-    "playVideo": "Play background video",
     "understood": "Understood"
   },
   "Acts": {
-    "learn": {
-      "kicker": "Act I",
-      "word": "Learn",
-      "question": "Ten colleges. Which one will shape you?",
-      "strip": "Colleges",
-      "programmes": "{count, plural, one {# programme} other {# programmes}}",
-      "explore": "Explore programmes",
-      "rankingsTitle": "Ranked among India's best",
-      "rankingsIntro": "NIRF {year} — the Government of India's national institutional ranking.",
-      "rank": "Rank",
-      "naac": "NAAC grade",
-      "moreRanks": "All NIRF {year} categories",
-      "source": "Source: NIRF {year} table published by SRMIST",
-      "drag": "Drag",
-      "ladderNote": "Each dot is SRM's place on that national list. Further left is better."
-    },
     "leap": {
-      "kicker": "Act II",
-      "word": "Leap",
-      "question": "What will you build before you graduate?",
-      "studentWork": "Student work",
-      "readStory": "Read the story",
       "researchTitle": "Research by mission",
       "researchIntro": "Not a list of departments — the problems we're working on.",
-      "researchNumbers": "Research in numbers",
-      "first": "1st",
-      "award": "Award",
-      "scrollHint": "Scroll to run the lap",
-      "startupsTitle": "Startups born here",
-      "startupsIntro": "{count} startups founded by SRM students, alumni and faculty have come through the Innovation and Incubation Centre. A few of them:",
-      "startupsLink": "Explore SRM's startup ecosystem"
+      "researchNumbers": "Research in numbers"
     },
     "lead": {
       "kicker": "Act III",
-      "word": "Lead",
-      "question": "Where will you lead?",
       "alumniTitle": "They started here",
       "pathLabel": "Career path of {name}",
-      "portraitAlt": "Portrait of {name}",
-      "placementsTitle": "Placements {season}",
-      "placementsIntro": "Recruiters who came to campus, and what they offered.",
-      "voicesTitle": "Voices at SRM",
-      "voicesIntro": "India's science leaders, on campus for the Indian National Science Academy's 90th Anniversary General Meeting.",
-      "voicesNote": "Roles as at the time of each talk. Videos play from YouTube when you tap them.",
-      "play": "Play",
-      "finaleTitle": "Every leaf started here.",
-      "finaleIntro": "Alumni, champions and founders: people who learned, leapt and now lead.",
-      "finaleList": "People and projects that started at SRM",
-      "yourLeaf": "Your leaf is waiting",
-      "apply": "Apply",
-      "startupLine": "Came through SRM's Innovation and Incubation Centre"
+      "portraitAlt": "Portrait of {name}"
     },
     "explore": {
       "title": "Where will you study?",
@@ -252,8 +203,7 @@
       "title": "This week at SRM",
       "featured": "The story this week",
       "upcoming": "Coming up",
-      "readStory": "Read the story",
-      "eventPage": "Event details"
+      "readStory": "Read the story"
     }
   },
   "Enquiry": {

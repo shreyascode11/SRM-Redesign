@@ -15,7 +15,7 @@ export const OUTSIDE_INDIA = "outside-india";
 export type EnquiryField = "name" | "phone" | "email" | "state" | "programme" | "message" | "consent";
 export type EnquiryError = "required" | "tooShort" | "tooLong" | "invalidPhone" | "invalidEmail" | "invalidChoice";
 
-export type Enquiry = {
+type Enquiry = {
   name: string;
   phone: string;
   email: string;
@@ -26,14 +26,14 @@ export type Enquiry = {
   locale: string;
 };
 
-export type EnquiryResult =
+type EnquiryResult =
   | { ok: true; data: Enquiry }
   | { ok: false; errors: Partial<Record<EnquiryField, EnquiryError>> };
 
 const clean = (v: unknown, max = 2000) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 
 /** Indian mobile (with or without +91) or any international number in +country format. */
-export function normalisePhone(raw: string): string | null {
+function normalisePhone(raw: string): string | null {
   const compact = raw.replace(/[\s\-().]/g, "");
   const indian = compact.match(/^(?:\+?91|0)?([6-9]\d{9})$/);
   if (indian) return `+91${indian[1]}`;

@@ -3,7 +3,7 @@
  * no tracking, no server). Pure module, so it runs on the server (programme pages) and in the browser (the finder's
  * "Suggested for you", built from what you pinned and viewed, kept only on your device).
  */
-export type Rec = { slug: string; college: string; level: string; tags: string[] };
+type Rec = { slug: string; college: string; level: string; tags: string[] };
 
 const jaccard = (a: string[], b: string[]) => {
   const A = new Set(a);

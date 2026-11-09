@@ -35,12 +35,12 @@ export type FeeRow = {
   note?: "bunker";
 };
 
-export type Cohort = { key: string; men?: string; women?: string; both?: string };
+type Cohort = { key: string; men?: string; women?: string; both?: string };
 export type Meal = "breakfast" | "lunch" | "snacks" | "dinner" | "special";
-export type MealTime = [Meal, string, string];
-export type Canteen = { slug: string; name: string; hours: [string, string] | "24h" };
+type MealTime = [Meal, string, string];
+type Canteen = { slug: string; name: string; hours: [string, string] | "24h" };
 
-export type Hostels = {
+type Hostels = {
   sources: Record<"hub" | "men" | "women" | "international" | "dining" | "rules" | "codeOfConduct" | "portal" | "staff", string>;
   capacity: Record<"men" | "women" | "international", string>;
   heroPhoto: string;

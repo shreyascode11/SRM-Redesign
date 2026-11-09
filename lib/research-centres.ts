@@ -8,7 +8,7 @@ import type messages from "@/messages/en.json";
 type CentresMessages = (typeof messages)["Centres"];
 export type CentreSlug = keyof CentresMessages["centres"];
 
-export type Centre = {
+type Centre = {
   slug: CentreSlug;
   acronym: string;
   established?: string;
@@ -18,7 +18,7 @@ export type Centre = {
   contact: { name?: string; role: keyof CentresMessages["roles"]; email: string; phone?: string };
 };
 
-export type ResearchCentres = {
+type ResearchCentres = {
   source: string;
   heroPhoto: string;
   dean: { name: string; email: string; phone: string; office: string };
