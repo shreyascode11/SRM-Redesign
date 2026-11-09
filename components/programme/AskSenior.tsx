@@ -15,7 +15,7 @@ type Mine = { id: string; text: string; at: number };
 const CONTACT = /(\+?\d[\d\s().-]{7,}\d)|([^\s@]+@[^\s@]+\.[^\s@]+)|(https?:\/\/|www\.)/i;
 
 /**
- * Ask a Senior (CLAUDE.md §2): moderated Q&A with verified current students.
+ * Ask a Senior: moderated Q&A with verified current students.
  * Demo build: the threads are labelled sample content; a visitor's question is kept only in this browser
  * (and says so) and shown with its real lifecycle state — pending moderator review.
  */

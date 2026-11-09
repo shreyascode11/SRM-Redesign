@@ -3,7 +3,7 @@ import type { Lexicon, Understood } from "./ask";
 import type { Campus, College, Programme } from "./content";
 
 /**
- * Instant programme search (CLAUDE.md §6 step 1). Pure module: no content imports, so the client bundle
+ * Instant programme search. Pure module: no content imports, so the client bundle
  * only carries the slim SearchDoc[] the server passes down, and Fuse itself loads lazily on first use.
  */
 

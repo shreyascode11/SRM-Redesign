@@ -3,7 +3,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
 /**
- * All scroll choreography (CLAUDE.md §5). Loaded lazily by MotionDirector, only when motion is allowed
+ * All scroll choreography. Loaded lazily by MotionDirector, only when motion is allowed
  * (not reduced motion, not Lite Mode). Every scene enhances markup that is already complete and readable:
  * remove this module and the page loses nothing but motion.
  *

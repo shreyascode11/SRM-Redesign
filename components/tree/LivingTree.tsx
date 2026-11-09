@@ -6,7 +6,7 @@ const tree = generateTree();
 const window_ = (s: number, e: number) => ({ "--s": s, "--e": e }) as CSSProperties;
 
 /**
- * Homepage-only scroll progress (CLAUDE.md §5). Desktop: small bare tree fixed bottom-left (no box, so it never hides what's behind it), shown only while
+ * Homepage-only scroll progress. Desktop: small bare tree fixed bottom-left (no box, so it never hides what's behind it), shown only while
  * the three acts are on screen (the hero shows the seed instead — see HeroSeed). Mobile: thin progress bar.
  * Decorative (aria-hidden): progress through the acts is also conveyed by the act headings themselves.
  */

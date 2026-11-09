@@ -22,7 +22,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
 
   const { site, events: allEvents } = getContent(locale);
   const events = upcomingEvents(allEvents);
-  // Structured data (CLAUDE.md §8): the university, and the real upcoming events from "This week".
+  // Structured data: the university, and the real upcoming events from "This week".
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [

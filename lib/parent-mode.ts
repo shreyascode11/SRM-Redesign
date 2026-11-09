@@ -1,5 +1,5 @@
 /**
- * Parent Mode (CLAUDE.md §2): programme pages lead with plain answers — fees, admission, safety and hostel,
+ * Parent Mode: programme pages lead with plain answers — fees, admission, safety and hostel,
  * distance, jobs — and a Call admissions button. State lives on <html data-parent="on|off">, set before first
  * paint (no flash), remembered in localStorage, and switchable by link: ?parent=on / ?parent=off.
  */

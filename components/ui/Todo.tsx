@@ -1,7 +1,7 @@
 import { isTodo, type OrTodo } from "@/lib/todo";
 
 /**
- * Marks content we don't have a verified source for yet (CLAUDE.md §7: never invent facts).
+ * Marks content we don't have a verified source for yet (never invent facts).
  * Dev: loud highlighted "TODO: …" so gaps are impossible to miss.
  * Production: renders the safe fallback (e.g. "Contact admissions") instead of a guess.
  */

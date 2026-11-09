@@ -13,14 +13,15 @@ All are self-hosted at build time through `next/font`; nothing is requested from
 | [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) | Display on the other pages | SIL Open Font License 1.1 |
 | [Noto Sans Tamil](https://fonts.google.com/noto/specimen/Noto+Sans+Tamil), [Noto Sans Devanagari](https://fonts.google.com/noto/specimen/Noto+Sans+Devanagari) | Tamil and Hindi | SIL Open Font License 1.1 |
 
-The link-preview images use TTF copies of Space Grotesk and Inter; see `assets/og-fonts/README.md`.
+The link-preview images (`lib/og.tsx`) are drawn at build time with TTF copies of Space Grotesk and Inter in
+`assets/og-fonts/` (licence texts alongside); they are never sent to visitors.
 
 ## Art and reference
 
 - **Kolam crests** (`lib/kolam.ts`) are generated line drawings after the kolam floor drawings of Tamil Nadu. They are
   original to this project, not traced from any source.
-- **Structure and feel** are borrowed from [grail-app.com](https://grail-app.com/), as the brief asks
-  (`docs/DESIGN-REFERENCE.md`). None of Grail's copy, logo, illustrations, fonts or code is used.
+- **Structure and feel** of the homepage take their cue from [grail-app.com](https://grail-app.com/). None of Grail's
+  copy, logo, illustrations, fonts or code is used.
 - **Photos** are SRM's own, plus openly licensed photos from Wikimedia Commons, which show their author and licence on
   the image. Every file's origin is listed in `content/media-credits.json`.
 

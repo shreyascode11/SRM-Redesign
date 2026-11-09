@@ -20,7 +20,7 @@ const HOME_KEY = "srm-home";
 const onMap = (h: { x: number; y: number }) => h.x >= 0 && h.x <= 1 && h.y >= 0 && h.y <= 1;
 
 /**
- * Campus constellation (CLAUDE.md §1.5 / step 9). Stylised India (static SVG image) with pins as real links:
+ * Campus constellation. Stylised India (static SVG image) with pins as real links:
  * without JS every pin and list item goes to its campus page; with JS they "fly" the camera there and open the
  * detail panel (address, directions, static street map, 360° tour in a modal).
  * The camera is one CSS transform (translate + scale) on the map stage; pins counter-scale to stay crisp.

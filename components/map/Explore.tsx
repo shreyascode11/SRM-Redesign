@@ -3,7 +3,7 @@ import { getCities, getMapData, mapAspect } from "@/lib/map";
 import { SECTION } from "@/lib/sections";
 import { CampusExplorer } from "./CampusExplorer";
 
-/** Explore (CLAUDE.md §1.5): campus constellation + detail panel + in-page 360° tour. */
+/** Explore: campus constellation + detail panel + in-page 360° tour. */
 export async function Explore() {
   const t = await getTranslations("Acts.explore");
   const locale = await getLocale();

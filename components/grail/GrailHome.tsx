@@ -25,7 +25,7 @@ const STAT_COLOR: Record<Stat, string> = { build: "var(--stat-build)", think: "v
 const KOLAMS = ["lattice", "rings", "petals", "flower"] as const;
 
 /**
- * "Level Up at SRM" (the look and motion follow docs/DESIGN-REFERENCE.md): a student's years at SRM as a
+ * "Level Up at SRM": a student's years at SRM as a
  * character that levels up. Seven chapters that alternate black, off-white sheets and lilac; each sticks while the
  * next slides over it. Every quest and number comes from content JSON; the stats on the card are a game, not data.
  */

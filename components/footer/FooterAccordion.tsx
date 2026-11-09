@@ -6,7 +6,7 @@ const DESKTOP = "(min-width: 64rem)";
 
 /**
  * Footer groups are <details> rendered open, so without JS everything is visible.
- * With JS: collapsed on mobile (CLAUDE.md §1.7), always open and non-toggling on desktop.
+ * With JS: collapsed on mobile, always open and non-toggling on desktop.
  */
 export function FooterAccordion({ children, className }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);

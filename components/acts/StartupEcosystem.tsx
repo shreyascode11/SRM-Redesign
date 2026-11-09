@@ -5,7 +5,7 @@ import { findMedia } from "@/lib/media";
 import { SECTION } from "@/lib/sections";
 
 /**
- * SRM's startup ecosystem as a static logo wall (CLAUDE.md §5: no auto-rotating carousels). The logos are SRM's
+ * SRM's startup ecosystem as a static logo wall (no auto-rotating carousels). The logos are SRM's
  * own 150 × 100 files, so tiles never render them larger than that.
  */
 export async function StartupEcosystem() {

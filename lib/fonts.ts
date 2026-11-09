@@ -16,7 +16,7 @@ export const fontDisplay = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-// "Level Up at SRM" display face (docs/DESIGN-REFERENCE.md): a wide, high-contrast serif set in capitals, the closest free (OFL)
+// "Level Up at SRM" display face: a wide, high-contrast serif set in capitals, the closest free (OFL)
 // match to the reference's paid face. One weight, Latin only; Tamil and Hindi fall back to their scripts' own faces.
 export const fontSerif = Gloock({
   subsets: ["latin"],

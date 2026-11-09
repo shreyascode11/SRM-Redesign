@@ -1,4 +1,4 @@
-/** The seed at the bottom of the hero (CLAUDE.md §1.1) — what the Living Tree grows from once the acts begin. */
+/** The seed at the bottom of the hero — what the Living Tree grows from once the acts begin. */
 export function HeroSeed() {
   return (
     <svg

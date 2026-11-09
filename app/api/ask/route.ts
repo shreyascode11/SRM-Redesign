@@ -6,7 +6,7 @@ import { routing } from "@/lib/i18n";
 import { loadSearcher, matchedWords, tokenize, toSearchDocs, type Searcher } from "@/lib/search";
 
 /**
- * GET /api/ask?q=… — programme matcher (CLAUDE.md §6), free and offline: no paid AI, no external calls.
+ * GET /api/ask?q=… — programme matcher, free and offline: no paid AI, no external calls.
  * Ranks with the same Fuse searcher as the hero, then answers with facts copied from programmes.json.
  * "Why it matches" is the visitor's own recognised words — nothing is generated, so nothing can be invented.
  * Low confidence → the UI says "I'm not sure" and gives admissions numbers. Deterministic, so CDN-cached.

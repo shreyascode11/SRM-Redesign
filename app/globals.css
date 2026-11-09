@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Brand tokens (CLAUDE.md §4). Each colour has one meaning. Dark only (light mode removed 2026-10-25).
+   Brand tokens. Each colour has one meaning. Dark only (light mode removed 2026-10-25).
    Contrast (WCAG 2.2) measured on blue-900:
      paper 14.8 · fg-muted 8.9 · blue-300 links/focus 8.3 · gold 9.0 · ink on gold 10.6 · line 4.0
      leaf-green-300 8.5 (tree) · blue-500 2.5 → never used as text/focus on dark
@@ -282,7 +282,7 @@ html:has(dialog[open]:modal) {
   }
 }
 
-/* ── The Living Tree (CLAUDE.md §5). --p (0..1) is set by TreeScroll; each piece reads its own window. ── */
+/* ── The Living Tree. --p (0..1) is set by TreeScroll; each piece reads its own window. ── */
 .tree-seg {
   fill: none;
   stroke: var(--tree);
@@ -884,7 +884,7 @@ form[role="search"] input::-webkit-search-cancel-button {
   content: none !important;
 }
 
-/* ═══ Level Up at SRM (docs/DESIGN-REFERENCE.md) ═══
+/* ═══ Level Up at SRM ═══
    The reference's palette (black, off-white sheets, lilac, aubergine) and motion (letters rising, sheets sliding over
    pinned sections, a turning ring of cards, a dock that changes colour). The tokens switch for the whole page, header
    and footer included, only when the Grail homepage is on it. */

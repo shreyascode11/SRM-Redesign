@@ -1,6 +1,6 @@
 /**
  * Stand-in for real SRM photography / video until the team drops files into public/media/.
- * Neutral gradient + visible "PHOTO TODO" label — never stock photos of other campuses (CLAUDE.md §7).
+ * Neutral gradient + visible "PHOTO TODO" label — never stock photos of other campuses.
  */
 type Props = {
   /** What the real photo should show, e.g. "Kattankulathur campus aerial at dusk". Doubles as alt text. */

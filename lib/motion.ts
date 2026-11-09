@@ -1,5 +1,5 @@
 /**
- * Motion gate. Every GSAP / Lenis / R3F entry point checks this first (CLAUDE.md §5 rules).
+ * Motion gate. Every GSAP / Lenis / R3F entry point checks this first.
  * Reads the attributes set by lib/lite-mode.ts, so Lite Mode and prefers-reduced-motion both switch motion off.
  */
 

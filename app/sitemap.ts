@@ -5,7 +5,7 @@ import { routing } from "@/lib/i18n";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const url = (locale: string, path: string) => `${siteUrl}${locale === routing.defaultLocale ? "" : `/${locale}`}${path}`;
 
-/** Every page in every language, each entry listing its hreflang alternates (CLAUDE.md §8). */
+/** Every page in every language, each entry listing its hreflang alternates. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [
     "",

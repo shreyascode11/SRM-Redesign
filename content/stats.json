@@ -26,7 +26,7 @@
         ]
       },
       "2024": {
-        "source": "srmist.edu.in homepage (CLAUDE.md §7)",
+        "source": "srmist.edu.in homepage",
         "ranks": [
           { "id": "university", "label": "University", "rank": 12 },
           { "id": "engineering", "label": "Engineering", "rank": 13 },
@@ -43,7 +43,7 @@
   "naac": { "grade": "A++" },
   "placements": {
     "season": "2025",
-    "seasonNote": "2025 batch, as on 12 June 2026 — srmist.edu.in/placements/ (read 2026-10-25). Replaces the 2023–24 figures in CLAUDE.md §7.",
+    "seasonNote": "2025 batch, as on 12 June 2026 — srmist.edu.in/placements/ (read 2026-10-25). Replaces the earlier 2023–24 figures.",
     "items": [
       { "id": "roles", "label": "roles offered", "value": 1448, "display": "1,448+", "suffix": "+" },
       { "id": "offers", "label": "offers", "value": 10190, "display": "10,190+", "suffix": "+" },

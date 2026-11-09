@@ -1,7 +1,7 @@
 /**
  * Lite Mode: same information, zero video / 3D / smooth scroll.
  *
- * Auto-enabled when any of these are true (CLAUDE.md §2, §8):
+ * Auto-enabled when any of these are true (§8):
  *   - Save-Data            → navigator.connection.saveData (the JS mirror of the `Save-Data` header)
  *   - slow connection      → navigator.connection.effectiveType is 3g or worse
  *   - reduced motion       → prefers-reduced-motion: reduce

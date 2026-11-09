@@ -10,7 +10,7 @@ import type { NavData, NavSection } from "./types";
 import srmLogo from "@/public/brand/srm-logo-white.png";
 
 /**
- * Five-item header (CLAUDE.md §1, UATX "few nav links") with Harvard-style progressive disclosure:
+ * Five-item header (UATX "few nav links") with Harvard-style progressive disclosure:
  * desktop = disclosure buttons opening one mega-panel at a time; mobile = full-screen <dialog> with accordions.
  * Uses the disclosure pattern, not ARIA menus — these are navigation links, not app commands.
  */

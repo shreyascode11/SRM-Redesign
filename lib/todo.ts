@@ -1,5 +1,5 @@
 /**
- * Unverified values are strings starting with "TODO:" (CLAUDE.md §7: never invent facts).
+ * Unverified values are strings starting with "TODO:" (never invent facts).
  * Kept free of content imports so client components can use it without bundling content JSON.
  */
 export type Todo = `TODO:${string}`;

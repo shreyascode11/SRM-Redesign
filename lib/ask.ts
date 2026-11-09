@@ -1,5 +1,5 @@
 /**
- * Programme matcher (CLAUDE.md §6) — free and offline: no paid AI, no external calls.
+ * Programme matcher — free and offline: no paid AI, no external calls.
  * 1. understand(): map the visitor's words (en / ta / hi) to programme tags, level (UG/PG) and places via
  *    content/lexicon.json.
  * 2. The /api/ask route ranks programmes with the same Fuse searcher the hero uses, then builds answer cards

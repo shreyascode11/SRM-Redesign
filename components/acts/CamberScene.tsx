@@ -9,7 +9,7 @@ import { findMedia, findSequence } from "@/lib/media";
 import { CamberScroll } from "./CamberScroll";
 
 /**
- * Team Camber Racing pinned scene (CLAUDE.md §5, build step 8).
+ * Team Camber Racing pinned scene.
  * Motion on: a ~3.4-screen track with a sticky stage; scrolling scrubs an image sequence of the car and the
  * event wins appear as callouts one by one. Motion off / Lite / no JS: the same stage as a normal block with
  * every callout visible and the poster image. Everything is real SSR text.

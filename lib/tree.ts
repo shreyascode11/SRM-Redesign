@@ -1,5 +1,5 @@
 /**
- * The Living Tree (CLAUDE.md §5): an original, procedurally generated tree — never a trace of SRM's emblem.
+ * The Living Tree: an original, procedurally generated tree — never a trace of SRM's emblem.
  * Deterministic (seeded), generated on the server, so the client only receives static SVG.
  *
  * Every piece carries the scroll-progress window [s, e] in which it draws in (p ∈ 0..1 across the three acts):
