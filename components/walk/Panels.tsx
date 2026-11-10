@@ -41,6 +41,14 @@ const ROLE_ICON: Record<string, string> = {
   founder: "🚀",
   host: "🎤",
   warden: "🏠",
+  clubs: "🎪",
+  astro: "🔭",
+  musician: "🎸",
+  gamer: "🎮",
+  quizmaster: "❓",
+  rotaract: "♻️",
+  creative: "🎨",
+  dancer: "💃",
 };
 
 export function Dialogue({
@@ -73,7 +81,25 @@ export function Dialogue({
   const [q, setQ] = useState("");
   const last = talk.idx >= talk.lines.length - 1;
   const quest = talk.quest ? script.quests.find((x) => x.id === talk.quest) : undefined;
-  const text = talk.topic ? talk.topic.a : talk.answer ? talk.answer.text : talk.asking ? null : talk.lines[talk.idx];
+  // A quiz step: after its lines, the questions one by one; every one must be right to pass.
+  const quiz = talk.kind === "quest" && quest && talk.step !== undefined ? quest.steps[talk.step]?.quiz : undefined;
+  const [qi, setQi] = useState(0);
+  const [feedback, setFeedback] = useState<"right" | "wrong" | null>(null);
+  useEffect(() => {
+    setQi(0);
+    setFeedback(null);
+  }, [talk.quest, talk.step]);
+  const quizOn = !!quiz && last && !talk.topic && !talk.asking;
+  const question = quizOn ? quiz[qi] : undefined;
+  const text = talk.topic
+    ? talk.topic.a
+    : talk.answer
+      ? talk.answer.text
+      : talk.asking
+        ? null
+        : question
+          ? `${feedback === "wrong" ? `${ui.quizWrong} ` : feedback === "right" ? `${ui.quizRight} ` : ""}${question.q}`
+          : talk.lines[talk.idx];
   // Type the line in quickly; a tap shows it all (and reduced motion shows it at once).
   const [shown, setShown] = useState(0);
   useEffect(() => {
@@ -162,7 +188,30 @@ export function Dialogue({
           </form>
         ) : null}
 
-        {!last && !talk.topic && !talk.asking ? (
+        {question ? (
+          <div role="group" aria-label={question.q} className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {question.options.map((o, i) => (
+              <button
+                key={o}
+                ref={i === 0 ? first : undefined}
+                type="button"
+                onClick={() => {
+                  if (i !== question.answer) return setFeedback("wrong");
+                  if (qi < quiz!.length - 1) {
+                    setQi(qi + 1);
+                    setFeedback("right");
+                  } else onNext();
+                }}
+                className={`${chip} bg-white`}
+              >
+                {o}
+              </button>
+            ))}
+            <span className="self-center text-sm text-black/55">
+              {qi + 1} / {quiz!.length}
+            </span>
+          </div>
+        ) : !last && !talk.topic && !talk.asking ? (
           <button ref={first} type="button" onClick={onNext} className={`${chip} bg-[#ffd166]`}>
             {ui.next} ▸
           </button>

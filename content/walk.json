@@ -87,7 +87,12 @@
       "osm": "TP Ganeshan Auditorium",
       "name": "TP Ganesan Auditorium",
       "kind": "events",
-      "href": "/student-life"
+      "href": "/student-life",
+      "build": {
+        "w": 63,
+        "d": 37,
+        "floors": 5
+      }
     },
     {
       "id": "crc",
@@ -481,6 +486,122 @@
         "shoes": 1,
         "bag": 0
       }
+    },
+    {
+      "id": "clubs",
+      "at": "park",
+      "outfit": {
+        "skin": 1,
+        "hair": 1,
+        "hairColor": 0,
+        "top": 6,
+        "bottom": 0,
+        "shoes": 0,
+        "bag": 2
+      }
+    },
+    {
+      "id": "astro",
+      "at": "clock-tower",
+      "outfit": {
+        "skin": 3,
+        "hair": 0,
+        "hairColor": 1,
+        "top": 4,
+        "bottom": 1,
+        "shoes": 2,
+        "bag": 1
+      }
+    },
+    {
+      "id": "musician",
+      "at": "auditorium",
+      "offset": [
+        5,
+        1.5
+      ],
+      "outfit": {
+        "skin": 2,
+        "hair": 4,
+        "hairColor": 0,
+        "top": 7,
+        "bottom": 0,
+        "shoes": 3,
+        "bag": 0
+      }
+    },
+    {
+      "id": "gamer",
+      "at": "tech-park-2",
+      "outfit": {
+        "skin": 4,
+        "hair": 5,
+        "hairColor": 0,
+        "top": 4,
+        "bottom": 3,
+        "shoes": 1,
+        "bag": 1
+      }
+    },
+    {
+      "id": "quizmaster",
+      "at": "mba",
+      "outfit": {
+        "skin": 0,
+        "hair": 2,
+        "hairColor": 3,
+        "top": 2,
+        "bottom": 1,
+        "shoes": 1,
+        "bag": 0
+      }
+    },
+    {
+      "id": "rotaract",
+      "at": "biotech",
+      "outfit": {
+        "skin": 5,
+        "hair": 0,
+        "hairColor": 0,
+        "top": 0,
+        "bottom": 1,
+        "shoes": 0,
+        "bag": 1
+      }
+    },
+    {
+      "id": "creative",
+      "at": "university-building",
+      "offset": [
+        -5,
+        1.5
+      ],
+      "outfit": {
+        "skin": 2,
+        "hair": 3,
+        "hairColor": 2,
+        "top": 3,
+        "bottom": 2,
+        "shoes": 3,
+        "bag": 3
+      }
+    },
+    {
+      "id": "dancer",
+      "at": "java",
+      "offset": [
+        4.5,
+        1.5
+      ],
+      "outfit": {
+        "skin": 3,
+        "hair": 1,
+        "hairColor": 0,
+        "top": 1,
+        "bottom": 3,
+        "shoes": 0,
+        "bag": 0
+      }
     }
   ],
   "quests": [
@@ -557,6 +678,142 @@
       "steps": [
         {
           "talk": "warden"
+        }
+      ]
+    },
+    {
+      "id": "club-fair",
+      "stat": "connect",
+      "steps": [
+        {
+          "talk": "clubs"
+        },
+        {
+          "pick": "java",
+          "item": "signups"
+        },
+        {
+          "talk": "clubs"
+        }
+      ]
+    },
+    {
+      "id": "star-party",
+      "stat": "think",
+      "steps": [
+        {
+          "talk": "astro"
+        },
+        {
+          "pick": "cv-raman",
+          "item": "telescope",
+          "within": 90
+        },
+        {
+          "talk": "astro"
+        }
+      ]
+    },
+    {
+      "id": "jam-session",
+      "stat": "grow",
+      "steps": [
+        {
+          "talk": "musician"
+        },
+        {
+          "pick": "kaari",
+          "item": "guitar"
+        },
+        {
+          "talk": "musician"
+        }
+      ]
+    },
+    {
+      "id": "lan-night",
+      "stat": "build",
+      "steps": [
+        {
+          "talk": "gamer"
+        },
+        {
+          "pick": "electrical",
+          "item": "cable",
+          "within": 150
+        },
+        {
+          "talk": "gamer"
+        }
+      ]
+    },
+    {
+      "id": "quiz-night",
+      "stat": "think",
+      "steps": [
+        {
+          "talk": "quizmaster"
+        },
+        {
+          "talk": "quizmaster",
+          "answers": [
+            2,
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clean-up",
+      "stat": "grow",
+      "steps": [
+        {
+          "talk": "rotaract"
+        },
+        {
+          "pick": "clock-tower",
+          "item": "litter"
+        },
+        {
+          "pick": "library",
+          "item": "litter"
+        },
+        {
+          "talk": "rotaract"
+        }
+      ]
+    },
+    {
+      "id": "sketch-walk",
+      "stat": "connect",
+      "steps": [
+        {
+          "talk": "creative"
+        },
+        {
+          "pick": "gate",
+          "item": "sketch"
+        },
+        {
+          "pick": "clock-tower",
+          "item": "sketch"
+        },
+        {
+          "talk": "creative"
+        }
+      ]
+    },
+    {
+      "id": "dance-practice",
+      "stat": "grow",
+      "steps": [
+        {
+          "talk": "dancer"
+        },
+        {
+          "talk": "host",
+          "within": 75
         }
       ]
     }

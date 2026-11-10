@@ -15,8 +15,15 @@ import type { Locale } from "@/lib/i18n";
 export type Outfit = { skin: number; hair: number; hairColor: number; top: number; bottom: number; shoes: number; bag: number };
 export type WalkPlace = { id: string; name: string; kind: string; kindLabel: string; href?: string; photo?: string; credit?: string };
 export type WalkTopic = { id: string; q: string; a: string; link?: { label: string; href: string } };
-export type WalkPerson = { id: string; at: string; name: string; greet: string; topics: WalkTopic[]; outfit: Outfit };
-export type WalkStep = { talk?: string; pick?: string; item?: string; hint: string; lines: string[] };
+export type WalkPerson = { id: string; at: string; name: string; greet: string; topics: WalkTopic[]; outfit: Outfit; offset?: [number, number] };
+/** One question of a quiz step: the options in order and which one is right. */
+export type WalkQuiz = { q: string; options: string[]; answer: number };
+/**
+ * A quest step: talk to a person or pick something up at a place (optionally carrying an item to the next step).
+ * A talk step can end in a quiz (answer every question to pass). `within` makes a step timed: it must be done within
+ * that many seconds of starting it, or the quest goes back one step to try again.
+ */
+export type WalkStep = { talk?: string; pick?: string; item?: string; within?: number; quiz?: WalkQuiz[]; hint: string; lines: string[] };
 export type WalkQuest = { id: string; stat: "build" | "think" | "connect" | "grow"; title: string; done: string; steps: WalkStep[] };
 export type WalkScript = {
   locale: string;
@@ -99,17 +106,25 @@ export async function getWalkScript(locale: Locale): Promise<WalkScript> {
       if (id === "events" && !upcoming.length && x.aNone) a = x.aNone;
       return { id, q: x.q, a, ...(x.link && links[id] ? { link: { label: x.link, href: href(links[id]!) } } : {}) };
     });
-    return { id: p.id, at: p.at, name: say(`people.${p.id}.name`), greet: say(`people.${p.id}.greet`), topics, outfit: p.outfit };
+    const offset = "offset" in p ? (p.offset as [number, number]) : undefined;
+    return { id: p.id, at: p.at, name: say(`people.${p.id}.name`), greet: say(`people.${p.id}.greet`), topics, outfit: p.outfit, ...(offset ? { offset } : {}) };
   });
 
   const quests: WalkQuest[] = walk.quests.map((q) => {
-    const steps = say.raw(`quests.${q.id}.steps`) as { hint: string; lines: string[] }[];
+    const steps = say.raw(`quests.${q.id}.steps`) as { hint: string; lines: string[]; quiz?: { q: string; options: string[] }[] }[];
     return {
       id: q.id,
       stat: q.stat as WalkQuest["stat"],
       title: say(`quests.${q.id}.title`),
       done: say(`quests.${q.id}.done`),
-      steps: q.steps.map((s, i) => ({ ...s, hint: steps[i]!.hint, lines: steps[i]!.lines })),
+      steps: q.steps.map((s, i) => {
+        // Quiz text comes from the messages (in the visitor's language); which option is right comes from walk.json.
+        const answers = "answers" in s ? (s.answers as number[]) : undefined;
+        const quiz = answers && steps[i]!.quiz ? steps[i]!.quiz!.map((x, k) => ({ q: x.q, options: x.options, answer: answers[k] ?? 0 })) : undefined;
+        const { answers: _a, ...rest } = s as typeof s & { answers?: number[] };
+        void _a;
+        return { ...rest, hint: steps[i]!.hint, lines: steps[i]!.lines, ...(quiz ? { quiz } : {}) };
+      }),
     };
   });
 

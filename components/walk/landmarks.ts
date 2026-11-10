@@ -307,6 +307,115 @@ function clockTower(b: Buf, clocks: Clock[], cx: number, cz: number, ri: number)
   put(b, new THREE.ConeGeometry(1, 1, 8), 0, 15.7, 0, 0.08, 0.5, 0.08, white);
 }
 
+/**
+ * TP Ganesan Auditorium, from what SRM publishes about it (its estate office lists a main hall of about 206 × 121.5 ft
+ * seating some 3,000, and two mini halls of 250 seats "under the ramp portion"); the look itself is our own. A tall
+ * main hall with fins and a vaulted roof; in front, two ramps rise from the sides to a landing with a columned porch and
+ * the name board; Mini Hall I and II sit under the ramps, and the ground-floor entrance is between them.
+ */
+function auditorium(b: Buf, signs: Sign[], poly: [number, number][]) {
+  const cx = poly.reduce((s, p) => s + p[0], 0) / poly.length;
+  const cz = poly.reduce((s, p) => s + p[1], 0) / poly.length;
+  const W = Math.hypot(poly[1]![0] - poly[0]![0], poly[1]![1] - poly[0]![1]);
+  const D = Math.hypot(poly[3]![0] - poly[0]![0], poly[3]![1] - poly[0]![1]);
+  // Local frame: +z runs from the front (the road side) to the back.
+  const dx = (poly[3]![0] - poly[0]![0]) / D;
+  const dz = (poly[3]![1] - poly[0]![1]) / D;
+  const ry = Math.atan2(dx, dz);
+  const { put, at } = frame(cx, cz, ry);
+  const tilt = (x: number, y: number, z: number, sx: number, sy: number, sz: number, roll: number, color: THREE.Color) => {
+    const [wx, wz] = at(x, z);
+    addGeo(b, BOX, M.compose(P.set(wx, y, wz), Q.setFromEuler(E.set(0, ry, roll, "YXZ")), S.set(sx, sy, sz)), color);
+  };
+  const cream = col("#ead9bd");
+  const fin = col("#f7f1e6");
+  const terracotta = col("#c4643d");
+  const stone = col("#cfc6b8");
+  const glass = col("#3d5d78");
+  const dark = col("#2c2f36");
+  const roofC = col("#9fb0ba");
+  const H = 17; // the main hall
+  const front = -D / 2; // the front wall's z
+  const zone = 7; // the ramps and mini halls take the front 7 m
+  const hallZ0 = front + zone;
+  const hallD = D / 2 - hallZ0;
+  const hallMid = (hallZ0 + D / 2) / 2;
+
+  // Main hall: walls, a terracotta band at the top, white fins all round, a vaulted metal roof.
+  put(b, BOX, 0, H / 2, hallMid, W, H, hallD, cream);
+  put(b, BOX, 0, H - 0.8, hallMid, W + 0.3, 1.6, hallD + 0.3, terracotta);
+  for (let x = -W / 2 + 1.5; x <= W / 2 - 1.4; x += 2.6) {
+    put(b, BOX, x, H / 2 - 0.8, hallZ0 - 0.25, 0.5, H - 1.6, 0.6, fin);
+    put(b, BOX, x, H / 2 - 0.8, D / 2 + 0.25, 0.5, H - 1.6, 0.6, fin);
+  }
+  for (let z = hallZ0 + 1.5; z <= D / 2 - 1.4; z += 2.6)
+    for (const sx of [-1, 1]) put(b, BOX, sx * (W / 2 + 0.25), H / 2 - 0.8, z, 0.6, H - 1.6, 0.5, fin);
+  {
+    const vault = new THREE.CylinderGeometry(1, 1, 1, 28, 1, false, 0, Math.PI);
+    vault.rotateZ(Math.PI / 2);
+    vault.rotateX(-Math.PI / 2);
+    put(b, vault, 0, H, hallMid, W + 0.6, 3.2, hallD / 2 + 0.3, roofC);
+    vault.dispose();
+  }
+  // The upper entrance: tall glass on the hall front, behind the landing.
+  put(b, BOX, 0, 9.4, hallZ0 - 0.06, 10.5, 7.6, 0.12, glass);
+  for (const x of [-3.5, 0, 3.5]) put(b, BOX, x, 9.4, hallZ0 - 0.14, 0.18, 7.6, 0.08, dark);
+
+  // The landing, its porch and the name board.
+  const landY = 5.6;
+  const landW = 12;
+  put(b, BOX, 0, landY - 0.3, front + zone / 2, landW, 0.6, zone - 0.4, stone);
+  for (const x of [-landW / 2 + 0.6, -2, 2, landW / 2 - 0.6]) {
+    const cyl = new THREE.CylinderGeometry(1, 1, 1, 14);
+    put(b, cyl, x, landY + 3.2, front + 0.8, 0.38, 6.4, 0.38, fin);
+    cyl.dispose();
+  }
+  put(b, BOX, 0, landY + 6.6, front + zone / 2 - 0.2, landW + 1.4, 0.6, zone + 0.4, fin);
+  put(b, BOX, 0, landY + 6.6, front + 0.25, landW + 1.4, 1.3, 0.3, col("#7a1f2b"));
+  signs.push({ text: "Dr. T. P. Ganesan Auditorium", bg: "#7a1f2b", fg: "#fbf3e6", ...xyz(at(0, front + 0.05), landY + 6.6), ry: ry + Math.PI, w: 11, h: 1.15 });
+  // Railings along the landing's front.
+  for (let x = -landW / 2 + 0.4; x <= landW / 2 - 0.3; x += 0.55) put(b, BOX, x, landY + 0.5, front + 0.35, 0.07, 1, 0.07, fin);
+  put(b, BOX, 0, landY + 1, front + 0.35, landW, 0.1, 0.12, fin);
+
+  // Two ramps, rising from the sides to the landing, each with a mini hall under it.
+  const rampLen = W / 2 - landW / 2;
+  const roll = Math.atan2(landY - 0.3, rampLen);
+  const slope = Math.hypot(rampLen, landY - 0.3);
+  ["I", "II"].forEach((name, i) => {
+    const sx = i === 0 ? -1 : 1;
+    const mid = sx * (landW / 2 + rampLen / 2);
+    tilt(mid, (landY + 0.3) / 2, front + zone / 2, slope, 0.45, zone - 1.4, sx * roll, stone);
+    // Railing along the ramp's outer edge.
+    tilt(mid, (landY + 0.3) / 2 + 1, front + 0.45, slope, 0.1, 0.12, sx * roll, fin);
+    for (let k = 0.05; k < 1; k += 0.08) {
+      const x = sx * (W / 2 - k * rampLen);
+      const y = 0.3 + k * (landY - 0.3);
+      put(b, BOX, x, y + 0.5, front + 0.45, 0.07, 1, 0.07, fin);
+    }
+    // The mini hall under the ramp: walls, doors, a name plate.
+    const hallX = sx * (landW / 2 + rampLen / 2 + 0.6);
+    const hallW = rampLen - 2.6;
+    put(b, BOX, hallX, 1.6, front + zone / 2 + 0.6, hallW, 3.2, zone - 2.4, cream);
+    put(b, BOX, hallX, 1.3, front + 1.78, 2.6, 2.4, 0.1, glass);
+    put(b, BOX, hallX, 1.3, front + 1.72, 0.12, 2.4, 0.08, dark);
+    signs.push({ text: `Mini Hall ${name}`, bg: "#fbf3e6", fg: "#7a1f2b", ...xyz(at(hallX, front + 1.68), 3.0), ry: ry + Math.PI, w: 3.4, h: 0.6 });
+  });
+  // The ground-floor entrance under the landing, and lamps on either side.
+  put(b, BOX, 0, 1.5, front + zone - 0.2, 5, 3, 0.12, glass);
+  put(b, BOX, 0, 1.5, front + zone - 0.26, 0.14, 3, 0.08, dark);
+  for (const x of [-landW / 2 - 0.4, landW / 2 + 0.4]) {
+    const pole = new THREE.CylinderGeometry(1, 1, 1, 8);
+    put(b, pole, x, 2.2, front - 1.2, 0.08, 4.4, 0.08, dark);
+    pole.dispose();
+    put(b, BALL, x, 4.5, front - 1.2, 0.32, 0.32, 0.32, col("#fff3c4"));
+  }
+  // Event banners on the hall front, either side of the porch.
+  for (const [x, c] of [
+    [-landW / 2 - 3.2, "#f2b632"],
+    [landW / 2 + 3.2, "#2e8b57"],
+  ] as const) put(b, BOX, x, 11, hallZ0 - 0.5, 1.6, 6, 0.08, col(c));
+}
+
 const xyz = (xz: [number, number], y: number) => ({ x: xz[0], y, z: xz[1] });
 
 /** Everything for the landmarks: one merged mesh, signs and clock faces. */
@@ -317,5 +426,7 @@ export function buildLandmarks(world: World) {
   if (world.gate) archGate(b, signs, world.gate);
   const ct = world.places["clock-tower"];
   if (ct?.island) clockTower(b, clocks, ct.x, ct.z, ct.island);
+  const aud = world.buildings.find((x) => x.n === "auditorium");
+  if (aud && aud.p.length === 4) auditorium(b, signs, aud.p as [number, number][]);
   return { geo: b.pos.length ? toGeo(b) : null, signs, clocks };
 }

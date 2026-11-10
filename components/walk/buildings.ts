@@ -194,8 +194,8 @@ const place = (x: number, y: number, z: number, sx: number, sy: number, sz: numb
   M.compose(P.set(x, y, z), Q.setFromEuler(E.set(0, ry, 0)), S.set(sx, sy, sz));
 
 export type Sign = { text: string; sub?: string; bg: string; fg: string; x: number; y: number; z: number; ry: number; w: number; h: number };
-/** Footprints drawn by landmarks.ts (the arch gate's piers and statue, the clock tower's island). */
-export const isLandmark = (n?: string) => !!n && (n.startsWith("gate-") || n === "clock-tower");
+/** Footprints drawn by landmarks.ts (the arch gate's piers and statue, the clock tower's island, the auditorium). */
+export const isLandmark = (n?: string) => !!n && (n.startsWith("gate-") || n === "clock-tower" || n === "auditorium");
 /** A clock face on the tower: centre, facing, radius. */
 export type Clock = { x: number; y: number; z: number; ry: number; r: number };
 

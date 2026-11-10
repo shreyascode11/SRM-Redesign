@@ -124,12 +124,16 @@ in the header, the homepage hero, or the campus and hostel pages.
 
 - **A real campus.** Roads, footpaths, lakes and building outlines come from OpenStreetMap, drawn at 0.65 scale so
   walks stay short (building heights are real). Hostel floor counts come from SRM's hostel data.
-- **Real landmarks**, modelled on footage: the pink **arch gate** at the entrance and the **clock tower** on its
-  roundabout, with clocks showing the live time in Chennai.
+- **Real landmarks**: the pink **arch gate** at the entrance and the **clock tower** on its roundabout (modelled on
+  footage, with clocks showing the live time in Chennai), and **TP Ganesan Auditorium** with its ramps and the two mini
+  halls under them (from SRM's own description; the look is approximate).
 - **Buildings with character**: the University Building, Tech Park, the orange Tech Park 2, hostels with balconies,
   SRM Global Hospitals and over forty named places, each opening its page on the site.
-- **People to meet.** Nine characters at real buildings answer questions from the site's own data and give six short
-  quests. Sixteen students walk the roads; they wave, answer your emotes and tell you where they're heading.
+- **People to meet.** Seventeen characters at real buildings answer questions from the site's own data and give
+  fourteen quests: running errands for the Camber Racing team, club activities (a club fair, an Astrophilia star party,
+  a Music Club jam, a Gaming Club LAN night, a Rotaract clean-up drive, a Creative Arts sketch walk, Dance Club
+  practice), a Quiz Club quiz with questions from SRM's own facts, and timed runs against the clock. Students walk the
+  roads too; they wave, answer your emotes and tell you where they're heading.
 - **Play your way**: walk, run or jump with the keyboard, tap the ground to walk there, or use a thumb stick on a
   phone. Dress your own student, choose your walking speed, and jump anywhere from the map.
 - **Light on the network.** The game loads only after you press Begin, the characters are built in code (no model

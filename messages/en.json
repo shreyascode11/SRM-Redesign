@@ -1452,7 +1452,7 @@
   "Walk": {
     "meta": {
       "title": "Walk SRM: explore the Kattankulathur campus",
-      "description": "Walk the real Kattankulathur campus as a student, talk to people at real buildings and take six small campus quests. Every building leads to its page.",
+      "description": "Walk the real Kattankulathur campus as a student, talk to people at real buildings and take fourteen campus quests, from club activities to a quiz. Every building leads to its page.",
       "coverAlt": "A student at the pink SRM arch gate in Walk SRM, with the statue in front and a student walking by."
     },
     "hero": {
@@ -1508,7 +1508,7 @@
       "stats": "Your stats",
       "level": "Level {n}",
       "allDoneTitle": "You levelled up at SRM",
-      "allDoneText": "Six quests, four stats, one campus. The real thing starts with a programme.",
+      "allDoneText": "Every quest done, four stats, one campus. The real thing starts with a programme.",
       "findProgramme": "Find your programme",
       "apply": "Apply",
       "share": "Share",
@@ -1545,7 +1545,11 @@
       "crowdHi3": "Vanakkam! Going to {place}, want to come along?",
       "crowdSomewhere": "class",
       "hideTarget": "Hide the next stop",
-      "showTarget": "Next stop"
+      "showTarget": "Next stop",
+      "quizRight": "Correct!",
+      "quizWrong": "Not quite. Try again!",
+      "timeLeft": "{s}s left",
+      "tooSlow": "Out of time! Go back and try again."
     },
     "kinds": {
       "arrival": "Getting here",
@@ -1569,7 +1573,13 @@
       "coffee": "a filter coffee",
       "part": "a spare part",
       "book": "a library book",
-      "deck": "a pitch deck"
+      "deck": "a pitch deck",
+      "signups": "the sign-up sheets",
+      "telescope": "a telescope",
+      "guitar": "a guitar",
+      "cable": "an extension cable",
+      "litter": "a bag of litter",
+      "sketch": "a sketch"
     },
     "stats": {
       "build": "Build",
@@ -1753,6 +1763,94 @@
             "link": "Hostels"
           }
         }
+      },
+      "clubs": {
+        "name": "Clubs coordinator",
+        "greet": "Fifteen clubs, one fair. Which one is yours?",
+        "topics": {
+          "clubs": {
+            "q": "Which clubs are there?",
+            "a": "Rotaract, Astrophilia, Music, Dance, Dramatics, Quiz, Gaming and more: fifteen student-run clubs, open to everyone.",
+            "link": "Student life"
+          }
+        }
+      },
+      "astro": {
+        "name": "Astrophilia member",
+        "greet": "Clear skies tonight. Perfect for stargazing!",
+        "topics": {
+          "clubs": {
+            "q": "What does Astrophilia do?",
+            "a": "Stars, planets and galaxies: astronomy talks and discussions.",
+            "link": "Student life"
+          }
+        }
+      },
+      "musician": {
+        "name": "Music Club member",
+        "greet": "We jam here before every show.",
+        "topics": {
+          "clubs": {
+            "q": "Can anyone join the Music Club?",
+            "a": "Yes: perform, jam and learn with fellow musicians.",
+            "link": "Student life"
+          }
+        }
+      },
+      "gamer": {
+        "name": "Gaming Club member",
+        "greet": "Esports practice starts soon. Want in?",
+        "topics": {
+          "clubs": {
+            "q": "What does the Gaming Club do?",
+            "a": "Esports training and tournaments.",
+            "link": "Student life"
+          }
+        }
+      },
+      "quizmaster": {
+        "name": "Quiz Club quizmaster",
+        "greet": "Fingers on buzzers!",
+        "topics": {
+          "clubs": {
+            "q": "What is the Quiz Club?",
+            "a": "Quizzing for the curious.",
+            "link": "Student life"
+          }
+        }
+      },
+      "rotaract": {
+        "name": "Rotaract Club volunteer",
+        "greet": "Small acts, big change. Want to help?",
+        "topics": {
+          "clubs": {
+            "q": "What does the Rotaract Club do?",
+            "a": "Community service with the Rotary Club of Meenambakkam, towards the sustainable development goals.",
+            "link": "Student life"
+          }
+        }
+      },
+      "creative": {
+        "name": "Creative Arts & Media member",
+        "greet": "Everything here is worth drawing.",
+        "topics": {
+          "clubs": {
+            "q": "What does Creative Arts & Media do?",
+            "a": "Painting, design and visual art.",
+            "link": "Student life"
+          }
+        }
+      },
+      "dancer": {
+        "name": "Dance Club member",
+        "greet": "Five, six, seven, eight!",
+        "topics": {
+          "clubs": {
+            "q": "Do I need to know how to dance?",
+            "a": "No: every style, for beginners and trained dancers alike.",
+            "link": "Student life"
+          }
+        }
       }
     },
     "quests": {
@@ -1870,6 +1968,232 @@
             ]
           }
         ]
+      },
+      "club-fair": {
+        "title": "Club fair",
+        "done": "The sign-ups are in. Welcome to the clubs!",
+        "steps": [
+          {
+            "hint": "Talk to the clubs coordinator at the campus park",
+            "lines": [
+              "The club fair is on today!",
+              "Students signed up at the stall by Java Food Court. Can you bring me the sheets?"
+            ]
+          },
+          {
+            "hint": "Collect the sign-up sheets at Java Food Court",
+            "lines": [
+              "Got them: the sign-up sheets."
+            ]
+          },
+          {
+            "hint": "Bring the sheets back to the clubs coordinator at the park",
+            "lines": [
+              "Look at all these names! Fifteen clubs, open to everyone. Pick one and come along."
+            ]
+          }
+        ]
+      },
+      "star-party": {
+        "title": "Star party",
+        "done": "The telescope is set up. Look up!",
+        "steps": [
+          {
+            "hint": "Talk to the Astrophilia member at the clock tower",
+            "lines": [
+              "We're stargazing from the roundabout tonight.",
+              "The telescope is at the C V Raman Block. Quick, before the clouds roll in: you have 90 seconds!"
+            ]
+          },
+          {
+            "hint": "Fetch the telescope from the C V Raman Block, fast",
+            "lines": [
+              "Got it: one telescope. Run!"
+            ]
+          },
+          {
+            "hint": "Bring the telescope back to the clock tower",
+            "lines": [
+              "Just in time. There's Jupiter!"
+            ]
+          }
+        ]
+      },
+      "jam-session": {
+        "title": "Jam session",
+        "done": "The jam is on. Encore!",
+        "steps": [
+          {
+            "hint": "Talk to the Music Club member at TP Ganesan Auditorium",
+            "lines": [
+              "We're jamming before the show, but my guitar is still in Kaari Hostel.",
+              "Could you get it?"
+            ]
+          },
+          {
+            "hint": "Pick up the guitar at Kaari Hostel",
+            "lines": [
+              "Got it: one guitar, carefully."
+            ]
+          },
+          {
+            "hint": "Bring the guitar back to the auditorium",
+            "lines": [
+              "Perfect timing. One, two, three, four!"
+            ]
+          }
+        ]
+      },
+      "lan-night": {
+        "title": "LAN night",
+        "done": "Every screen is on. Game on!",
+        "steps": [
+          {
+            "hint": "Talk to the Gaming Club member at Tech Park 2",
+            "lines": [
+              "Practice starts in a few minutes and we're one cable short.",
+              "There's a spare at the Electrical Sciences Block. You've got two and a half minutes!"
+            ]
+          },
+          {
+            "hint": "Grab an extension cable at the Electrical Sciences Block, fast",
+            "lines": [
+              "Got it: one extension cable. Go, go, go!"
+            ]
+          },
+          {
+            "hint": "Bring the cable back to Tech Park 2",
+            "lines": [
+              "Plugged in. You saved the night!"
+            ]
+          }
+        ]
+      },
+      "quiz-night": {
+        "title": "Quiz night",
+        "done": "Full marks. Welcome to the Quiz Club!",
+        "steps": [
+          {
+            "hint": "Talk to the quizmaster at the MBA Block",
+            "lines": [
+              "Three questions about SRM. Get all three right to win.",
+              "Ready?"
+            ]
+          },
+          {
+            "hint": "Answer the quizmaster's three questions",
+            "lines": [
+              "Here we go!"
+            ],
+            "quiz": [
+              {
+                "q": "What grade did NAAC give SRM?",
+                "options": [
+                  "A",
+                  "A+",
+                  "A++"
+                ]
+              },
+              {
+                "q": "How many student-run clubs does SRM list on its student life page?",
+                "options": [
+                  "5",
+                  "15",
+                  "50"
+                ]
+              },
+              {
+                "q": "Which SRM team are national champions at Formula Bharat 2026?",
+                "options": [
+                  "Team Camber Racing",
+                  "The Quiz Club",
+                  "The Rotaract Club"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "clean-up": {
+        "title": "Clean-up drive",
+        "done": "The campus is cleaner. Thank you!",
+        "steps": [
+          {
+            "hint": "Talk to the Rotaract Club volunteer at the Biotech Block",
+            "lines": [
+              "It's our clean-up drive today.",
+              "Could you pick up the litter at the clock tower, then by the library?"
+            ]
+          },
+          {
+            "hint": "Pick up the litter at the clock tower",
+            "lines": [
+              "One bag done."
+            ]
+          },
+          {
+            "hint": "Pick up the litter by the library",
+            "lines": [
+              "Two bags done. That's the lot!"
+            ]
+          },
+          {
+            "hint": "Report back to the Rotaract volunteer at the Biotech Block",
+            "lines": [
+              "That's community service. Small acts, big change!"
+            ]
+          }
+        ]
+      },
+      "sketch-walk": {
+        "title": "Sketch walk",
+        "done": "Two sketches for the club's wall.",
+        "steps": [
+          {
+            "hint": "Talk to the Creative Arts & Media member at the University Building",
+            "lines": [
+              "We're drawing SRM's landmarks for our wall.",
+              "Sketch the arch gate, then the clock tower."
+            ]
+          },
+          {
+            "hint": "Sketch the arch gate",
+            "lines": [
+              "One sketch: the arch gate."
+            ]
+          },
+          {
+            "hint": "Sketch the clock tower",
+            "lines": [
+              "Two sketches: the clock tower too."
+            ]
+          },
+          {
+            "hint": "Show your sketches at the University Building",
+            "lines": [
+              "These are going straight on the wall!"
+            ]
+          }
+        ]
+      },
+      "dance-practice": {
+        "title": "Dance practice",
+        "done": "Made it! Rehearsal can start.",
+        "steps": [
+          {
+            "hint": "Talk to the Dance Club member at Java Food Court",
+            "lines": [
+              "Rehearsal starts at TP Ganesan Auditorium in a minute!",
+              "Tell the event host we're coming. Run: you have 75 seconds!"
+            ]
+          },
+          {
+            "hint": "Reach the event host at the auditorium, fast",
+            "lines": [
+              "The dancers are on their way? Brilliant. Stage is yours!"
+            ]
+          }
+        ]
       }
     },
     "tour": {
@@ -1884,7 +2208,7 @@
     "promo": {
       "kicker": "New: Walk SRM",
       "title": "Walk Kattankulathur in 3D",
-      "text": "Arrive at the gate, walk the real campus, talk to people at real buildings and take six small quests. About 10 minutes.",
+      "text": "Arrive at the gate, walk the real campus, talk to people at real buildings and take fourteen quests, from club activities to a quiz and timed runs.",
       "cta": "Start walking",
       "hostel": "Walk to your hostel in 3D",
       "heroCta": "Walk the campus in 3D",

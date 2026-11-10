@@ -122,7 +122,9 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       const b = pl.b !== undefined ? world.buildings[pl.b] : undefined;
       const c = b ? b.p.reduce((s, q) => [s[0] + q[0] / b.p.length, s[1] + q[1] / b.p.length], [0, 0]) : [pl.x, pl.z];
       const face = Math.atan2(pl.door[0] - c[0]!, pl.door[1] - c[1]!);
-      return [{ id: p.id, x: pl.door[0], z: pl.door[1], face, outfit: p.outfit }];
+      // Two people at one building stand a few steps apart (offset in content/walk.json).
+      const [ox, oz] = p.offset ?? [0, 0];
+      return [{ id: p.id, x: pl.door[0] + ox, z: pl.door[1] + oz, face, outfit: p.outfit }];
     });
   }, [world, script.people]);
   const peopleXZ = useMemo<XZ[]>(() => npcs.map((n) => [n.x, n.z]), [npcs]);
@@ -177,6 +179,40 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     setToast(msg);
     window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200);
   }, []);
+
+  // ── Timed steps: a countdown starts when a step with `within` becomes current; run out and the quest goes back one
+  // step (to whoever set the challenge), so you can try again. ──
+  const [timer, setTimer] = useState<{ quest: string; step: number; ends: number } | null>(null);
+  const [clock, setClock] = useState(0);
+  useEffect(() => {
+    for (const q of script.quests) {
+      const s = progress.active[q.id];
+      const st = s !== undefined ? q.steps[s] : undefined;
+      if (st?.within) {
+        setTimer((t) => (t && t.quest === q.id && t.step === s ? t : { quest: q.id, step: s!, ends: Date.now() + st.within! * 1000 }));
+        return;
+      }
+    }
+    setTimer(null);
+  }, [progress, script.quests]);
+  useEffect(() => {
+    if (!timer) return;
+    const id = window.setInterval(() => {
+      const t = Date.now();
+      setClock(t);
+      if (t < timer.ends) return;
+      window.clearInterval(id);
+      setProgress((p) => {
+        if (p.active[timer.quest] !== timer.step) return p;
+        return { ...p, active: { ...p.active, [timer.quest]: Math.max(0, timer.step - 1) }, tracked: timer.quest };
+      });
+      setTimer(null);
+      flash(ui.tooSlow!);
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [timer, flash, ui]);
+  const timerQuest = timer ? script.quests.find((q) => q.id === timer.quest) : undefined;
+  const secondsLeft = timer ? Math.max(0, Math.ceil((timer.ends - (clock || Date.now())) / 1000)) : 0;
 
   const advance = useCallback(
     (questId: string, step: number) => {
@@ -556,6 +592,16 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                 </div>
               )
             ) : null}
+            {timer && timerQuest && !talk ? (
+              <p
+                role="timer"
+                aria-live="off"
+                className={`pointer-events-none absolute top-32 left-3 rounded-full px-4 py-2 text-sm font-bold shadow-lg sm:top-16 sm:left-1/2 sm:-translate-x-1/2 ${secondsLeft <= 10 ? "bg-[#c1121f] text-white" : "bg-[#ffd166] text-black"}`}
+              >
+                <span aria-hidden="true">⏱ </span>
+                {fmt(ui.timeLeft!, { s: secondsLeft })} · {timerQuest.title}
+              </p>
+            ) : null}
             {toast ? (
               <p role="status" className="walk-toast absolute top-40 left-3 max-w-[calc(100vw-10rem)] rounded-2xl sm:top-20 sm:left-1/2 sm:w-max sm:max-w-[60vw] sm:-translate-x-1/2 bg-[#ffd166] px-5 py-2 text-center font-bold text-black shadow-xl">
                 {toast}
@@ -636,7 +682,11 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               }}
               onAccept={() => {
                 advance(talk.quest!, 0);
-                endTalk();
+                // If the next step is with the same person (a quiz), carry straight on instead of making you ask again.
+                const q = script.quests.find((x) => x.id === talk.quest);
+                const next = q?.steps[1];
+                if (q && next?.talk === talk.person) setTalk({ person: talk.person, lines: next.lines, idx: 0, kind: "quest", quest: q.id, step: 1 });
+                else endTalk();
               }}
               onDecline={endTalk}
               onTopic={(tp) => setTalk({ ...talk, topic: tp, asking: false, answer: null })}
