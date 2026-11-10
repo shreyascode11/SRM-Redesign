@@ -294,23 +294,32 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     }
     return null;
   }, [progress, script.quests, near.place]);
+  // Someone stands at a pick-up spot (Riya at the clock tower): picking up comes first, unless a quest is waiting on that person.
+  const pickFirst = useMemo(() => {
+    if (!pickHere) return false;
+    if (!near.person) return true;
+    return !script.quests.some((q) => {
+      const s = progress.active[q.id];
+      return s !== undefined && q.steps[s]?.talk === near.person;
+    });
+  }, [pickHere, near.person, progress, script.quests]);
 
   const action = useCallback(() => {
     if (talk || panel) return;
-    if (near.person) startTalk(near.person);
+    if (pickHere && pickFirst) {
+      const q = script.quests.find((x) => x.id === pickHere.q)!;
+      flash(q.steps[pickHere.s]!.lines[0]!);
+      game.current.anim.cheer = 0.8;
+      advance(pickHere.q, pickHere.s);
+    } else if (near.person) startTalk(near.person);
     else if (walker) {
       // A student walking by: they stop, wave, and tell you where they're off to.
       const lines = [ui.crowdHi1, ui.crowdHi2, ui.crowdHi3].filter(Boolean) as string[];
       const line = lines[(walker.i + Math.floor(Date.now() / 7000)) % lines.length] ?? "";
       flash(`${walker.name}: ${fmt(line, { place: placeNames[walker.to] ?? ui.crowdSomewhere ?? "" })}`);
       game.current.crowd.greet = walker.i;
-    } else if (pickHere) {
-      const q = script.quests.find((x) => x.id === pickHere.q)!;
-      flash(q.steps[pickHere.s]!.lines[0]!);
-      game.current.anim.cheer = 0.8;
-      advance(pickHere.q, pickHere.s);
     }
-  }, [talk, panel, near.person, walker, pickHere, startTalk, advance, flash, script.quests, ui, placeNames]);
+  }, [talk, panel, near.person, walker, pickHere, pickFirst, startTalk, advance, flash, script.quests, ui, placeNames]);
 
   const emote = useCallback((glyph: string, id: string) => {
     const g = game.current;
@@ -619,7 +628,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                 <div className="flex flex-col items-end gap-2">
                   {near.person || pickHere || walker ? (
                     <button type="button" {...tap(action)} className="walk-act walk-tap pointer-events-auto inline-flex min-h-14 items-center gap-2 rounded-full bg-[#ffd166] px-6 text-lg font-bold text-black shadow-xl">
-                      {near.person ? `💬 ${ui.talk}` : walker && !pickHere ? `👋 ${fmt(ui.crowdSay!, { name: walker.name })}` : `📦 ${fmt(ui.pick!, { item: script.items[pickHere!.item] ?? "" })}`}
+                      {pickHere && pickFirst ? `📦 ${fmt(ui.pick!, { item: script.items[pickHere.item] ?? "" })}` : near.person ? `💬 ${ui.talk}` : `👋 ${fmt(ui.crowdSay!, { name: walker!.name })}`}
                       <kbd className="hidden rounded bg-black/15 px-1.5 text-xs sm:inline">E</kbd>
                     </button>
                   ) : null}

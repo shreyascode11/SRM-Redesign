@@ -85,9 +85,8 @@ export function Scene({
   const npcAnims = useMemo(() => new Map(npcs.map((n) => [n.id, { current: game.current.npc[n.id]! }])), [npcs, game]);
   const places = useMemo(
     () =>
-      Object.entries(world.places)
-        .filter(([, p]) => p.b !== undefined)
-        .map(([id, p]) => ({ id, x: p.door[0], z: p.door[1] })),
+      // Every place counts, not only buildings: quests also send you to the arch gate and other open spots.
+      Object.entries(world.places).map(([id, p]) => ({ id, x: p.door[0], z: p.door[1] })),
     [world],
   );
   const sun = useRef<THREE.DirectionalLight>(null);
