@@ -180,6 +180,39 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200);
   }, []);
 
+  // ── The clock tower strikes the hour: a toast and a bell, once per hour ──
+  const audio = useRef<AudioContext | null>(null);
+  const onChime = useCallback(
+    (hour: number) => {
+      flash(fmt(ui.chime!, { n: hour }));
+      try {
+        audio.current ??= new AudioContext();
+        const ac = audio.current;
+        for (let i = 0; i < hour; i++) {
+          const at = ac.currentTime + 0.1 + i * 1.7;
+          const out = ac.createGain();
+          out.gain.setValueAtTime(0.0001, at);
+          out.gain.exponentialRampToValueAtTime(0.16, at + 0.01);
+          out.gain.exponentialRampToValueAtTime(0.0001, at + 3.2);
+          out.connect(ac.destination);
+          // A bell: a low hum, the strike tone and a few inharmonic overtones that die away faster.
+          for (const [ratio, level] of [[0.5, 0.5], [1, 1], [1.19, 0.35], [2, 0.45], [2.74, 0.25], [4.1, 0.12]] as const) {
+            const o = ac.createOscillator();
+            const g = ac.createGain();
+            o.frequency.value = 220 * ratio;
+            g.gain.value = level / (1 + ratio * 0.6);
+            o.connect(g).connect(out);
+            o.start(at);
+            o.stop(at + 3.3 / Math.sqrt(ratio));
+          }
+        }
+      } catch {
+        // No sound available: the toast is enough.
+      }
+    },
+    [flash, ui],
+  );
+
   // ── Timed steps: a countdown starts when a step with `within` becomes current; run out and the quest goes back one
   // step (to whoever set the challenge), so you can try again. ──
   const [timer, setTimer] = useState<{ quest: string; step: number; ends: number } | null>(null);
@@ -226,6 +259,12 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
           done = [...p.done, questId];
           flash(fmt(ui.questDone!, { title: q.title }));
           game.current.anim.cheer = 1.6;
+          // Then what it changed on campus, and for the dance practice, a dance of your own.
+          if (q.reward) window.setTimeout(() => flash(`🎁 ${q.reward}`), 3300);
+          if (questId === "dance-practice") {
+            game.current.anim.cheer = 0;
+            game.current.anim.dance = 8;
+          }
           if (done.length === script.quests.length) window.setTimeout(() => setPanel("finish"), 1400);
           return { active, done, tracked: Object.keys(active)[0] ?? null };
         }
@@ -504,6 +543,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               sky={sky}
               quality={quality}
               names={placeNames}
+              done={progress.done}
+              onChime={onChime}
             />
           </Canvas>
 

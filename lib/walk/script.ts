@@ -24,7 +24,8 @@ export type WalkQuiz = { q: string; options: string[]; answer: number };
  * that many seconds of starting it, or the quest goes back one step to try again.
  */
 export type WalkStep = { talk?: string; pick?: string; item?: string; within?: number; quiz?: WalkQuiz[]; hint: string; lines: string[] };
-export type WalkQuest = { id: string; stat: "build" | "think" | "connect" | "grow"; title: string; done: string; steps: WalkStep[] };
+/** reward: what finishing it changes on campus (shown when you finish and in the quest list). */
+export type WalkQuest = { id: string; stat: "build" | "think" | "connect" | "grow"; title: string; done: string; reward?: string; steps: WalkStep[] };
 export type WalkScript = {
   locale: string;
   places: WalkPlace[];
@@ -117,6 +118,7 @@ export async function getWalkScript(locale: Locale): Promise<WalkScript> {
       stat: q.stat as WalkQuest["stat"],
       title: say(`quests.${q.id}.title`),
       done: say(`quests.${q.id}.done`),
+      ...(say.has(`quests.${q.id}.reward`) ? { reward: say(`quests.${q.id}.reward`) } : {}),
       steps: q.steps.map((s, i) => {
         // Quiz text comes from the messages (in the visitor's language); which option is right comes from walk.json.
         const answers = "answers" in s ? (s.answers as number[]) : undefined;

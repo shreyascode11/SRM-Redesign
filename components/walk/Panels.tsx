@@ -282,7 +282,7 @@ export function QuestLog({ script, progress, onClose, onTrack }: { script: WalkS
           const done = progress.done.includes(q.id);
           const step = progress.active[q.id];
           const state = done ? ui.completed : step !== undefined ? ui.active : ui.available;
-          const hint = done ? q.done : q.steps[step ?? 0]?.hint;
+          const hint = done ? (q.reward ? `${q.done} 🎁 ${q.reward}` : q.done) : q.steps[step ?? 0]?.hint;
           return (
             <li key={q.id} className={`rounded-xl border p-3 ${progress.tracked === q.id ? "border-[#ffd166]" : "border-white/15"}`}>
               <p className="flex items-center justify-between gap-2">

@@ -1549,7 +1549,8 @@
       "quizRight": "Correct!",
       "quizWrong": "Not quite. Try again!",
       "timeLeft": "{s}s left",
-      "tooSlow": "Out of time! Go back and try again."
+      "tooSlow": "Out of time! Go back and try again.",
+      "chime": "🕰️ The clock tower strikes {n}"
     },
     "kinds": {
       "arrival": "Getting here",
@@ -1992,7 +1993,8 @@
               "Look at all these names! Fifteen clubs, open to everyone. Pick one and come along."
             ]
           }
-        ]
+        ],
+        "reward": "Club stalls are up in the Campus park: Music, Astrophilia and Dance."
       },
       "star-party": {
         "title": "Star party",
@@ -2017,7 +2019,8 @@
               "Just in time. There's Jupiter!"
             ]
           }
-        ]
+        ],
+        "reward": "The telescope stands by the Clock Tower now, pointed at the sky."
       },
       "jam-session": {
         "title": "Jam session",
@@ -2042,7 +2045,8 @@
               "Perfect timing. One, two, three, four!"
             ]
           }
-        ]
+        ],
+        "reward": "Hear that? The guitar is playing outside the TP Ganesan Auditorium."
       },
       "lan-night": {
         "title": "LAN night",
@@ -2067,7 +2071,8 @@
               "Plugged in. You saved the night!"
             ]
           }
-        ]
+        ],
+        "reward": "The gaming setup is glowing outside Tech Park 2."
       },
       "quiz-night": {
         "title": "Quiz night",
@@ -2112,7 +2117,8 @@
               }
             ]
           }
-        ]
+        ],
+        "reward": "Your trophy is on show at the MBA Block."
       },
       "clean-up": {
         "title": "Clean-up drive",
@@ -2143,7 +2149,8 @@
               "That's community service. Small acts, big change!"
             ]
           }
-        ]
+        ],
+        "reward": "Bins and flowers now stand at the Clock Tower, the Library and the Biotech Block."
       },
       "sketch-walk": {
         "title": "Sketch walk",
@@ -2174,7 +2181,8 @@
               "These are going straight on the wall!"
             ]
           }
-        ]
+        ],
+        "reward": "The finished painting is on an easel by the SRM University Building."
       },
       "dance-practice": {
         "title": "Dance practice",
@@ -2193,7 +2201,8 @@
               "The dancers are on their way? Brilliant. Stage is yours!"
             ]
           }
-        ]
+        ],
+        "reward": "The dancers are rehearsing at Java Food Court. Dance with them!"
       }
     },
     "tour": {

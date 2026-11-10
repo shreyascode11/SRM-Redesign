@@ -4,8 +4,9 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Outfit } from "@/lib/walk/script";
-import type { Collider, Paths, World, XZ } from "@/lib/walk/world";
+import { chennaiHour, type Collider, type Paths, type World, type XZ } from "@/lib/walk/world";
 import { type Anim, Character, newAnim, OUTFIT_SIZES } from "./Character";
+import { Held, QUEST_LOOPS, Rewards } from "./Rewards";
 import { curve, dropAt, toon } from "./curve";
 import type { Game } from "./state";
 import { Ink } from "./Ink";
@@ -59,6 +60,8 @@ export function Scene({
   sky,
   quality,
   names,
+  done,
+  onChime,
 }: {
   world: World;
   collider: Collider;
@@ -74,6 +77,10 @@ export function Scene({
   sky: Sky;
   quality: "auto" | "low" | "high";
   names: Record<string, string>;
+  /** Finished quests: what they leave behind shows on campus. */
+  done: string[];
+  /** The clock tower strikes the hour (1–12) while you're within earshot. */
+  onChime: (hour: number) => void;
 }) {
   const { camera, gl, size, scene } = useThree();
   const player = useRef<THREE.Group>(null);
@@ -90,6 +97,15 @@ export function Scene({
     [world],
   );
   const sun = useRef<THREE.DirectionalLight>(null);
+  // Once their quest is done, the dancer keeps dancing, the musician keeps playing, and so on.
+  useEffect(() => {
+    for (const [id, [quest, loop]] of Object.entries(QUEST_LOOPS)) {
+      const a = game.current.npc[id];
+      if (a) a.loop = done.includes(quest) ? loop : "";
+    }
+  }, [done, game]);
+  const tower = world.places["clock-tower"];
+  const lastHour = useRef(-1);
   const skyColors = useMemo(() => ({ top: sky.top, horizon: sky.horizon, cloud: sky.cloud, cloudShade: sky.cloudShade, night: sky.night }), [sky]);
   // Students walking the campus on their own, between real places, along the side of real roads. Each has a name,
   // a pace and a side of the road; they wave when you come close, answer your emotes, and stop to say hello.
@@ -228,6 +244,11 @@ export function Scene({
     const g = game.current;
     curve.uTime.value += dt;
     frame.current++;
+
+    // ── The clock tower strikes the hour, heard within about 150 m ──
+    const hourNow = Math.floor(chennaiHour());
+    if (lastHour.current >= 0 && hourNow !== lastHour.current && tower && Math.hypot(g.pos.x - tower.x, g.pos.z - tower.z) < 150) onChime(hourNow % 12 || 12);
+    lastHour.current = hourNow;
 
     // ── Movement ──
     let mx = 0;
@@ -558,8 +579,10 @@ export function Scene({
           rotation-y={n.face}
         >
           <Character outfit={n.outfit} anim={npcAnims.get(n.id) as React.RefObject<Anim>} blob={quality === "low"} />
+          <Held id={n.id} done={done} />
         </group>
       ))}
+      <Rewards world={world} npcs={npcs} done={done} />
       {walkers.map((w) => (
         <group
           key={w.i}

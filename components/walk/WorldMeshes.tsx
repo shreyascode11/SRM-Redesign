@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { World, XZ } from "@/lib/walk/world";
 import { useFrame } from "@react-three/fiber";
-import { chennaiHour } from "@/lib/walk/world";
+import { chennaiSeconds } from "@/lib/walk/world";
 import { buildCampus, buildStreets, type Clock, isLandmark, type Sign } from "./buildings";
 import { buildLandmarks } from "./landmarks";
 import { toon } from "./curve";
@@ -308,14 +308,19 @@ function dialTexture() {
 function ClockFaces({ clocks }: { clocks: Clock[] }) {
   const hours = useRef<(THREE.Mesh | null)[]>([]);
   const minutes = useRef<(THREE.Mesh | null)[]>([]);
+  const seconds = useRef<(THREE.Mesh | null)[]>([]);
   const face = useMemo(() => toon({ map: dialTexture() }), []);
   const hand = useMemo(() => toon({ color: "#1d2330" }), []);
+  const red = useMemo(() => toon({ color: "#c8323d" }), []);
   useFrame(() => {
-    const h = chennaiHour(); // the campus's own time
-    const hA = -((h % 12) / 12) * Math.PI * 2;
-    const mA = -((h % 1) * Math.PI * 2);
+    // The campus's own time, to the second: hour and minute hands glide, the second hand ticks.
+    const t = chennaiSeconds();
+    const hA = -((t / 3600) % 12 / 12) * Math.PI * 2;
+    const mA = -((t / 60) % 60 / 60) * Math.PI * 2;
+    const sA = -(Math.floor(t % 60) / 60) * Math.PI * 2;
     hours.current.forEach((m) => m && (m.rotation.z = hA));
     minutes.current.forEach((m) => m && (m.rotation.z = mA));
+    seconds.current.forEach((m) => m && (m.rotation.z = sA));
   });
   return (
     <>
@@ -332,6 +337,11 @@ function ClockFaces({ clocks }: { clocks: Clock[] }) {
           <group ref={(m) => void (minutes.current[i] = m as unknown as THREE.Mesh)} position-z={0.05}>
             <mesh position-y={c.r * 0.38} material={hand}>
               <planeGeometry args={[c.r * 0.06, c.r * 0.86]} />
+            </mesh>
+          </group>
+          <group ref={(m) => void (seconds.current[i] = m as unknown as THREE.Mesh)} position-z={0.06}>
+            <mesh position-y={c.r * 0.32} material={red}>
+              <planeGeometry args={[c.r * 0.025, c.r * 0.9]} />
             </mesh>
           </group>
           <mesh position-z={0.07} material={hand}>

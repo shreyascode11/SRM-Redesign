@@ -13,9 +13,13 @@ import { toon } from "./curve";
  * outfit screen is a colour or a visible part, so a change costs nothing to load.
  */
 
-/** air: 0 on the ground … 1 in the middle of a jump (knees tucked, arms out). */
-export type Anim = { speed: number; wave: number; cheer: number; talk: number; look: number; air: number };
-export const newAnim = (): Anim => ({ speed: 0, wave: 0, cheer: 0, talk: 0, look: 0, air: 0 });
+/**
+ * air: 0 on the ground … 1 in the middle of a jump (knees tucked, arms out). dance: seconds of dancing left.
+ * loop: what someone keeps doing while standing still, once their club quest is done.
+ */
+export type Loop = "" | "dance" | "strum" | "paint" | "stargaze" | "game";
+export type Anim = { speed: number; wave: number; cheer: number; talk: number; look: number; air: number; dance: number; loop: Loop };
+export const newAnim = (): Anim => ({ speed: 0, wave: 0, cheer: 0, talk: 0, look: 0, air: 0, dance: 0, loop: "" });
 
 export const PALETTE = {
   skin: ["#f6dcc8", "#e8bf9f", "#cf9a72", "#b07a54", "#8d5b3c", "#65412a"],
@@ -384,6 +388,67 @@ export function Character({ outfit, anim, scale = 1, blob = false }: { outfit: O
       head.current.rotation.y += (Math.max(-1, Math.min(1, a.look)) - head.current.rotation.y) * Math.min(1, dt * 6);
       head.current.rotation.x = a.talk > 0 ? Math.sin(t * 7) * 0.07 : Math.sin(t * 1.3) * 0.015;
       if (a.talk > 0) a.talk -= dt;
+    }
+    if (body.current) body.current.rotation.z = 0;
+
+    // ── Standing loops: dancing, strumming a guitar, painting, stargazing, gaming ──
+    if (a.dance > 0) a.dance = k > 0.3 ? 0 : a.dance - dt; // walking off ends the dance
+    const loop: Loop = a.dance > 0 ? "dance" : a.loop;
+    const arms = armL.current && armR.current && elbowL.current && elbowR.current;
+    if (!loop || k > 0.3 || a.wave > 0 || a.cheer > 0 || air > 0.01 || !arms || !legL.current || !legR.current || !kneeL.current || !kneeR.current) return;
+    const [aL, aR, eL, eR] = [armL.current!, armR.current!, elbowL.current!, elbowR.current!];
+    if (loop === "dance") {
+      // About 120 beats a minute: bounce on every beat, sway and swap arms every two.
+      const b = t * Math.PI * 4;
+      const sw = Math.sin(b / 2);
+      aL.rotation.set(-0.3, 0, -(1.7 + sw * 0.9));
+      aR.rotation.set(-0.3, 0, 1.7 - sw * 0.9);
+      eL.rotation.x = -0.7 - Math.cos(b) * 0.4;
+      eR.rotation.x = -0.7 + Math.cos(b) * 0.4;
+      legL.current!.rotation.x = Math.sin(b) * 0.28;
+      legR.current!.rotation.x = -Math.sin(b) * 0.28;
+      kneeL.current!.rotation.x = Math.max(0, Math.sin(b)) * 0.7;
+      kneeR.current!.rotation.x = Math.max(0, -Math.sin(b)) * 0.7;
+      if (body.current) {
+        body.current.position.y = Math.abs(Math.sin(b)) * 0.09;
+        body.current.rotation.z = sw * 0.1;
+      }
+      if (torso.current) torso.current.rotation.y = sw * 0.4;
+      if (head.current) head.current.rotation.x = Math.sin(b) * 0.1;
+    } else if (loop === "strum") {
+      // One hand on the neck, the other strumming across the body, nodding to the beat.
+      aL.rotation.set(-0.85, 0, -0.55);
+      eL.rotation.x = -0.75;
+      aR.rotation.set(-0.35, 0, 0.3);
+      eR.rotation.x = -1.35 + Math.sin(t * 11) * 0.22;
+      if (head.current) head.current.rotation.x = 0.12 + Math.sin(t * 4.2) * 0.08;
+      if (body.current) body.current.position.y = Math.abs(Math.sin(t * 4.2)) * 0.02;
+    } else if (loop === "paint") {
+      // Brush hand out to the easel, small strokes; the other hand holds the palette.
+      aR.rotation.set(-1.15 + Math.sin(t * 2.6) * 0.12, 0, 0.55 + Math.sin(t * 1.7) * 0.1);
+      eR.rotation.x = -0.35 + Math.sin(t * 5) * 0.18;
+      aL.rotation.set(-0.5, 0, -0.25);
+      eL.rotation.x = -1.2;
+      if (head.current) head.current.rotation.y = -0.45;
+    } else if (loop === "stargaze") {
+      // A hand on the telescope, looking up at the sky.
+      aR.rotation.set(-0.75, 0, 0.45);
+      eR.rotation.x = -0.4;
+      if (head.current) {
+        head.current.rotation.x = -0.38 + Math.sin(t * 0.7) * 0.04;
+        head.current.rotation.y = -0.3;
+      }
+    } else if (loop === "game") {
+      // Both hands on a controller, thumbs busy, leaning in at the screen.
+      aL.rotation.set(-0.75, 0, 0.28);
+      aR.rotation.set(-0.75, 0, -0.28);
+      eL.rotation.x = -0.95 + Math.sin(t * 13) * 0.05;
+      eR.rotation.x = -0.95 + Math.cos(t * 15) * 0.05;
+      if (head.current) {
+        head.current.rotation.x = 0.15;
+        head.current.rotation.y = -0.55;
+      }
+      if (torso.current) torso.current.rotation.y = -0.2 + Math.sin(t * 3) * 0.04;
     }
   });
 

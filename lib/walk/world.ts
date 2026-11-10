@@ -235,9 +235,8 @@ export class Paths {
   }
 }
 
+/** Seconds since midnight in Chennai right now (India is UTC+5:30 all year, no daylight saving). */
+export const chennaiSeconds = () => (Date.now() / 1000 + 19800) % 86400;
+
 /** Chennai's hour right now (the campus clock), for the time-of-day light. */
-export const chennaiHour = () => {
-  const s = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "numeric", hourCycle: "h23" }).format(new Date());
-  const [hh, mm] = s.split(":").map(Number);
-  return (hh ?? 12) + (mm ?? 0) / 60;
-};
+export const chennaiHour = () => chennaiSeconds() / 3600;
