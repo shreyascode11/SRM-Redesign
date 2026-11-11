@@ -213,6 +213,37 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     [flash, ui],
   );
 
+  // ── A train pulling into Potheri: a toast and two notes on the horn ──
+  const onTrain = useCallback(() => {
+    flash(ui.train!);
+    try {
+      audio.current ??= new AudioContext();
+      const ac = audio.current;
+      for (const [at, len] of [[0.1, 0.7], [1.0, 1.3]] as const) {
+        const t = ac.currentTime + at;
+        const out = ac.createGain();
+        out.gain.setValueAtTime(0.0001, t);
+        out.gain.exponentialRampToValueAtTime(0.07, t + 0.05);
+        out.gain.setValueAtTime(0.07, t + len - 0.15);
+        out.gain.exponentialRampToValueAtTime(0.0001, t + len);
+        const lp = ac.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 1400;
+        lp.connect(out).connect(ac.destination);
+        for (const f of [311, 370]) {
+          const o = ac.createOscillator();
+          o.type = "sawtooth";
+          o.frequency.value = f;
+          o.connect(lp);
+          o.start(t);
+          o.stop(t + len);
+        }
+      }
+    } catch {
+      // No sound available: the toast is enough.
+    }
+  }, [flash, ui]);
+
   // ── Timed steps: a countdown starts when a step with `within` becomes current; run out and the quest goes back one
   // step (to whoever set the challenge), so you can try again. ──
   const [timer, setTimer] = useState<{ quest: string; step: number; ends: number } | null>(null);
@@ -545,6 +576,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               names={placeNames}
               done={progress.done}
               onChime={onChime}
+              onTrain={onTrain}
             />
           </Canvas>
 

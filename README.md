@@ -126,7 +126,9 @@ in the header, the homepage hero, or the campus and hostel pages.
   walks stay short (building heights are real). Hostel floor counts come from SRM's hostel data.
 - **Real landmarks**: the pink **arch gate** at the entrance and the **clock tower** on its roundabout (modelled on
   footage, with clocks showing the live time in Chennai to the second and a bell that strikes the hour), and **TP Ganesan Auditorium** with its ramps and the two mini
-  halls under them (from SRM's own description; the look is approximate).
+  halls under them (from SRM's own description; the look is approximate). Past the main road runs the **railway**
+  (three electrified tracks from OpenStreetMap) with **Potheri station**: a platform, canopy and name boards, and a
+  suburban train that pulls in, waits and leaves every hundred seconds, with a horn when you're nearby.
 - **Buildings with character**: the University Building, Tech Park, the orange Tech Park 2, hostels with balconies,
   SRM Global Hospitals and over forty named places, each opening its page on the site.
 - **People to meet.** Seventeen characters at real buildings answer questions from the site's own data and give

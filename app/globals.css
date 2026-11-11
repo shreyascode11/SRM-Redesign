@@ -1563,8 +1563,10 @@ html[data-intro="on"] .grail-intro {
 }
 
 /* Walk SRM thumb buttons: no double-tap zoom, no text selection or grey flash under a thumb. */
+/* Game buttons take no browser gestures: with a thumb on the stick, a second finger on Run or Jump would otherwise
+   start a pinch-zoom, and the browser would cancel the stick's touch (you'd stop dead instead of running). */
 .walk-tap {
-  touch-action: manipulation;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;

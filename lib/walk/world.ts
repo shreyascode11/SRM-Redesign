@@ -23,6 +23,8 @@ export type World = {
   gate?: { x: number; z: number; ry: number; span: number };
   /** The world is drawn at this fraction of real size (distances and footprints; heights stay real). */
   scale?: number;
+  /** The railway past Potheri (OpenStreetMap): the centre line of its tracks, how many, and the station. */
+  rail?: { line: XZ[]; tracks: number; station: { name: string; ref: string; at: XZ } };
 };
 
 const inside = (x: number, z: number, poly: XZ[]) => {

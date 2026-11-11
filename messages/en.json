@@ -1550,7 +1550,8 @@
       "quizWrong": "Not quite. Try again!",
       "timeLeft": "{s}s left",
       "tooSlow": "Out of time! Go back and try again.",
-      "chime": "🕰️ The clock tower strikes {n}"
+      "chime": "🕰️ The clock tower strikes {n}",
+      "train": "🚆 A train is pulling into Potheri station"
     },
     "kinds": {
       "arrival": "Getting here",

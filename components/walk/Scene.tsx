@@ -6,6 +6,7 @@ import * as THREE from "three";
 import type { Outfit } from "@/lib/walk/script";
 import { chennaiHour, type Collider, type Paths, type World, type XZ } from "@/lib/walk/world";
 import { type Anim, Character, newAnim, OUTFIT_SIZES } from "./Character";
+import { Railway } from "./Railway";
 import { Held, QUEST_LOOPS, Rewards } from "./Rewards";
 import { curve, dropAt, toon } from "./curve";
 import type { Game } from "./state";
@@ -62,6 +63,7 @@ export function Scene({
   names,
   done,
   onChime,
+  onTrain,
 }: {
   world: World;
   collider: Collider;
@@ -81,6 +83,8 @@ export function Scene({
   done: string[];
   /** The clock tower strikes the hour (1–12) while you're within earshot. */
   onChime: (hour: number) => void;
+  /** A train sets off towards Potheri while you're near the station. */
+  onTrain: () => void;
 }) {
   const { camera, gl, size, scene } = useThree();
   const player = useRef<THREE.Group>(null);
@@ -583,6 +587,7 @@ export function Scene({
         </group>
       ))}
       <Rewards world={world} npcs={npcs} done={done} />
+      {world.rail ? <Railway world={world} game={game} onTrain={onTrain} /> : null}
       {walkers.map((w) => (
         <group
           key={w.i}

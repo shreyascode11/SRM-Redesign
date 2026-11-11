@@ -10,6 +10,8 @@
 //   [out:json][timeout:90];(way["building"](12.8155,80.0360,12.8275,80.0510);way["highway"](12.8155,80.0360,12.8275,80.0510);
 //   way["natural"="water"](12.8155,80.0360,12.8275,80.0510);way["leisure"~"park|pitch|garden"](12.8155,80.0360,12.8275,80.0510);
 //   node["name"](12.8155,80.0360,12.8275,80.0510););out geom tags center;
+// and, for the railway past Potheri (a wider box, so the line runs out to the horizon), in a second file:
+//   [out:json][timeout:60];(way["railway"="rail"](12.805,80.028,12.835,80.048);node["railway"~"station|halt"](12.805,80.028,12.835,80.048););out geom tags;
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 const inputs = process.argv.slice(2);
@@ -400,7 +402,42 @@ for (const n of osmNames.filter((x) => x.tags.highway === "bus_stop" && x.buildi
   stops.push(d < 6 ? [r(q[0] + (dx / d) * 6), r(q[1] + (dz / d) * 6)] : xz);
 }
 
-const out = { origin: [LAT0, LON0], scale: SCALE, bounds, spawn: walk.spawn, buildings, roads, water, green, trees, stops, places, ...(gate ? { gate } : {}) };
+// ── The railway past Potheri: one centre line (the average of the main-line tracks, sampled every 10 m across the
+// ground's depth) and the station, so the game can lay its tracks, platform and a train. Trees on the line go.
+const rail = (() => {
+  const raw = (p) => [(p.lon - LON0) * MX, -(p.lat - LAT0) * MZ];
+  const ways = elements.filter((e) => e.type === "way" && e.tags?.railway === "rail" && e.tags.usage === "main" && e.geometry).map((e) => e.geometry.map(raw));
+  const halt = elements.find((e) => e.type === "node" && /station|halt/.test(e.tags?.railway ?? "") && e.tags?.name);
+  if (!ways.length || !halt) return null;
+  const xAt = (w, z) => {
+    for (let i = 1; i < w.length; i++) {
+      const [a, b] = [w[i - 1], w[i]];
+      if ((a[1] - z) * (b[1] - z) <= 0 && a[1] !== b[1]) return a[0] + ((z - a[1]) / (b[1] - a[1])) * (b[0] - a[0]);
+    }
+    return null;
+  };
+  const line = [];
+  for (let z = Math.ceil((bounds.minZ - 440) / 10) * 10; z <= bounds.maxZ + 440; z += 10) {
+    const xs = ways.map((w) => xAt(w, z)).filter((x) => x !== null);
+    if (xs.length) line.push([Math.round((xs.reduce((s, x) => s + x, 0) / xs.length) * 10) / 10, z]);
+  }
+  return { line, station: { name: halt.tags.name, ref: halt.tags.ref ?? "", at: raw(halt).map((v) => Math.round(v * 10) / 10) }, tracks: ways.length };
+})();
+if (rail) {
+  const near = (p) => {
+    let d = Infinity;
+    for (let i = 1; i < rail.line.length; i++) {
+      const [a, b] = [rail.line[i - 1], rail.line[i]];
+      const dx = b[0] - a[0], dz = b[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / (dx * dx + dz * dz)));
+      d = Math.min(d, Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz));
+    }
+    return d;
+  };
+  for (let i = trees.length - 1; i >= 0; i--) if (near(trees[i]) < 18) trees.splice(i, 1);
+}
+
+const out = { origin: [LAT0, LON0], scale: SCALE, bounds, spawn: walk.spawn, buildings, roads, water, green, trees, stops, places, ...(gate ? { gate } : {}), ...(rail ? { rail } : {}) };
 mkdirSync(new URL("../public/walk/", import.meta.url), { recursive: true });
 writeFileSync(new URL("../public/walk/ktr-world.json", import.meta.url), JSON.stringify(out));
 console.log(

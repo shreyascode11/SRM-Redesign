@@ -321,6 +321,22 @@ function drawMap(ctx: CanvasRenderingContext2D, world: World, w: number, h: numb
   ctx.fillRect(0, 0, w, h);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  // The railway: a dark band with white ties, like a map's railway line.
+  if (world.rail) {
+    const line = () => {
+      ctx.beginPath();
+      world.rail!.line.forEach(([x, z], i) => (i ? ctx.lineTo(sx(x), sz(z)) : ctx.moveTo(sx(x), sz(z))));
+      ctx.stroke();
+    };
+    ctx.strokeStyle = "#4a4d57";
+    ctx.lineWidth = Math.max(3, 12 * view.scale);
+    line();
+    ctx.strokeStyle = "#f4f1ea";
+    ctx.lineWidth = Math.max(1.5, 6 * view.scale);
+    ctx.setLineDash([Math.max(3, 8 * view.scale), Math.max(3, 8 * view.scale)]);
+    line();
+    ctx.setLineDash([]);
+  }
   for (const r of world.roads) {
     ctx.strokeStyle = r.f ? "#e9d9b8" : "#8d8f99";
     ctx.lineWidth = Math.max(1, r.w * view.scale);
