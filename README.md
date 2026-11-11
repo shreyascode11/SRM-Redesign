@@ -138,6 +138,11 @@ in the header, the homepage hero, or the campus and hostel pages.
   quests stay visible on campus: the dancer keeps dancing (and you dance too), the painting stands on its easel, the
   guitar plays, the telescope, the gaming desk, the trophy, the stalls and the new bins are all there. Students walk the
   roads too; they wave, answer your emotes and tell you where they're heading.
+- **Play with friends.** Start a room from 👥 Friends and share the link: everyone who opens it walks the same campus
+  with you, in their own outfit and with a name tag. Chat (T), emote, talk by voice (louder the closer you stand), jump
+  to a friend from the map, and do quests together: a step one of you does counts for everyone at that step. Browsers
+  connect straight to each other over WebRTC ([Trystero](https://github.com/dmotz/trystero)); a few public Nostr relays
+  only introduce them, so there's no account and no game server.
 - **Play your way**: walk, run or jump with the keyboard, tap the ground to walk there, or use a thumb stick on a
   phone. Dress your own student, choose your walking speed, and jump anywhere from the map.
 - **Light on the network.** The game loads only after you press Begin, the characters are built in code (no model

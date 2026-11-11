@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { WALK_RELAYS } from "./lib/walk/relays";
 
 const withNextIntl = createNextIntlPlugin("./lib/i18n-request.ts");
 
@@ -25,7 +26,8 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           // Geolocation is used only by "How far is SRM from home?"; nothing else needs a sensor.
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), payment=(), usb=(), geolocation=(self)" },
+          // The microphone is for Walk SRM's voice chat with friends (off until you turn it on).
+          { key: "Permissions-Policy", value: "camera=(), microphone=(self), payment=(), usb=(), geolocation=(self)" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
           // Content-Security-Policy: our own files only, plus the two embeds we use (SRM's 360° tour, YouTube without
           // cookies). Next.js needs inline scripts and styles to hydrate, hence 'unsafe-inline'. Production only, so
@@ -40,7 +42,8 @@ const nextConfig: NextConfig = {
                     "style-src 'self' 'unsafe-inline'",
                     "img-src 'self' data: blob:",
                     "font-src 'self' data:",
-                    "connect-src 'self'",
+                    // Walk SRM multiplayer: the relays that introduce friends' browsers to each other.
+                    `connect-src 'self' ${WALK_RELAYS.join(" ")}`,
                     "media-src 'self'",
                     "frame-src https://webstor.srmist.edu.in https://www.youtube-nocookie.com",
                     "worker-src 'self' blob:",

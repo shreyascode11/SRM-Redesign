@@ -313,7 +313,15 @@ export function QuestLog({ script, progress, onClose, onTrack }: { script: WalkS
 
 const kindColor = (k: number) => ["#cfc6b6", "#e8d29a", "#f2a7a0", "#ffc061", "#93c5e8", "#c9e7e0", "#ffd2a0", "#b8b0d8", "#e6b6e0", "#ddd5c8"][k] ?? "#cfc6b6";
 
-function drawMap(ctx: CanvasRenderingContext2D, world: World, w: number, h: number, view: { cx: number; cz: number; scale: number }, game: Game | null, extra: { target: XZ | null; people: XZ[] }) {
+function drawMap(
+  ctx: CanvasRenderingContext2D,
+  world: World,
+  w: number,
+  h: number,
+  view: { cx: number; cz: number; scale: number },
+  game: Game | null,
+  extra: { target: XZ | null; people: XZ[]; friends?: () => XZ[] },
+) {
   const sx = (x: number) => w / 2 + (x - view.cx) * view.scale;
   const sz = (z: number) => h / 2 + (z - view.cz) * view.scale;
   ctx.clearRect(0, 0, w, h);
@@ -366,6 +374,18 @@ function drawMap(ctx: CanvasRenderingContext2D, world: World, w: number, h: numb
     ctx.arc(sx(x), sz(z), 3.5, 0, Math.PI * 2);
     ctx.fill();
   }
+  // Friends in your room: green dots with a white ring.
+  if (extra.friends) {
+    ctx.fillStyle = "#2e8b57";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    for (const [x, z] of extra.friends()) {
+      ctx.beginPath();
+      ctx.arc(sx(x), sz(z), 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
   if (extra.target) {
     ctx.fillStyle = "#ffd166";
     ctx.strokeStyle = "#14101a";
@@ -397,7 +417,7 @@ function drawMap(ctx: CanvasRenderingContext2D, world: World, w: number, h: numb
 }
 
 /** The small map in the corner: ±150 m around you, north up, with your heading and the next stop. */
-export function Minimap({ world, game, people, label }: { world: World; game: React.RefObject<Game>; people: XZ[]; label: string }) {
+export function Minimap({ world, game, people, label, friends }: { world: World; game: React.RefObject<Game>; people: XZ[]; label: string; friends?: () => XZ[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current;
@@ -413,11 +433,11 @@ export function Minimap({ world, game, people, label }: { world: World; game: Re
       if (n++ % 4) return;
       const g = game.current;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawMap(ctx, world, c.clientWidth, c.clientHeight, { cx: g.pos.x, cz: g.pos.z, scale: c.clientWidth / 300 }, g, { target: g.target, people });
+      drawMap(ctx, world, c.clientWidth, c.clientHeight, { cx: g.pos.x, cz: g.pos.z, scale: c.clientWidth / 300 }, g, { target: g.target, people, friends });
     };
     tick();
     return () => cancelAnimationFrame(raf);
-  }, [world, game, people]);
+  }, [world, game, people, friends]);
   return <canvas ref={ref} role="img" aria-label={label} className="pointer-events-auto size-28 rounded-full border-4 border-white/80 shadow-xl sm:size-36" />;
 }
 
@@ -429,6 +449,9 @@ export function MapPanel({
   onWalk,
   onJump,
   onClose,
+  friends,
+  friendList = [],
+  onJumpFriend,
 }: {
   script: WalkScript;
   world: World;
@@ -437,6 +460,9 @@ export function MapPanel({
   onWalk: (id: string) => void;
   onJump: (id: string) => void;
   onClose: () => void;
+  friends?: () => XZ[];
+  friendList?: { id: string; name: string }[];
+  onJumpFriend?: (id: string) => void;
 }) {
   const ui = script.ui;
   const ref = useRef<HTMLCanvasElement>(null);
@@ -450,13 +476,31 @@ export function MapPanel({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const b = world.bounds;
     const scale = Math.min(c.clientWidth / (b.maxX - b.minX), c.clientHeight / (b.maxZ - b.minZ));
-    drawMap(ctx, world, c.clientWidth, c.clientHeight, { cx: (b.minX + b.maxX) / 2, cz: (b.minZ + b.maxZ) / 2, scale }, game.current, { target: game.current.target, people });
-  }, [world, game, people]);
+    drawMap(ctx, world, c.clientWidth, c.clientHeight, { cx: (b.minX + b.maxX) / 2, cz: (b.minZ + b.maxZ) / 2, scale }, game.current, { target: game.current.target, people, friends });
+  }, [world, game, people, friends]);
   const groups = new Map<string, WalkPlace[]>();
   for (const p of script.places) groups.set(p.kindLabel, [...(groups.get(p.kindLabel) ?? []), p]);
   return (
     <Panel title={ui.map!} onClose={onClose} closeLabel={ui.close!} wide>
       <canvas ref={ref} role="img" aria-label={ui.minimap} className="aspect-[4/3] w-full rounded-xl" />
+      {friendList.length && onJumpFriend ? (
+        <section className="mt-4">
+          <h3 className="text-xs font-semibold text-white/70 uppercase">{ui.friends}</h3>
+          <ul className="mt-1 flex flex-col">
+            {friendList.map((f) => (
+              <li key={f.id} className="flex items-center justify-between gap-2 border-b border-white/10 py-1">
+                <span className="text-sm">
+                  <span aria-hidden="true" className="mr-1.5 inline-block size-2.5 rounded-full bg-[#2e8b57]" />
+                  {f.name}
+                </span>
+                <button type="button" onClick={() => onJumpFriend(f.id)} className={`${darkBtn} min-h-10 border border-white/20 px-2 text-xs`}>
+                  {ui.jumpTo}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {[...groups].map(([k, list]) => (
           <section key={k}>
@@ -814,3 +858,187 @@ export function PlaceCard({ place, ui }: { place: WalkPlace; ui: Record<string, 
   );
 }
 
+
+// ─────────────────────────── Friends (multiplayer) ───────────────────────────
+
+export type FriendRow = { id: string; name: string; metres: number; voice: boolean };
+export type ChatRow = { n: number; name: string; text: string; self: boolean };
+
+/** Start or join a room, invite friends, see who's here, jump to them, talk (text and voice). */
+export function FriendsPanel({
+  script,
+  code,
+  status,
+  link,
+  name,
+  onName,
+  friends,
+  chat,
+  mic,
+  micError,
+  onStart,
+  onJoin,
+  onLeave,
+  onJump,
+  onSay,
+  onMic,
+  onClose,
+  focusChat,
+}: {
+  script: WalkScript;
+  code: string | null;
+  status: "idle" | "connecting" | "live";
+  link: string;
+  name: string;
+  onName: (n: string) => void;
+  friends: FriendRow[];
+  chat: ChatRow[];
+  mic: boolean;
+  micError: boolean;
+  onStart: () => void;
+  onJoin: (code: string) => void;
+  onLeave: () => void;
+  onJump: (id: string) => void;
+  onSay: (text: string) => void;
+  onMic: () => void;
+  onClose: () => void;
+  focusChat?: boolean;
+}) {
+  const ui = script.ui;
+  const [joinCode, setJoinCode] = useState("");
+  const [draft, setDraft] = useState("");
+  const [nameDraft, setNameDraft] = useState(name);
+  const [copied, setCopied] = useState(false);
+  const chatBox = useRef<HTMLInputElement>(null);
+  const log = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    if (focusChat && code) chatBox.current?.focus();
+  }, [focusChat, code]);
+  useEffect(() => {
+    log.current?.scrollTo({ top: log.current.scrollHeight });
+  }, [chat.length]);
+  const field = "min-h-11 w-full rounded-xl border border-white/25 bg-black/30 px-3 text-white placeholder:text-white/50 focus-visible:outline-3 focus-visible:outline-[#ffd166]";
+  const saveName = () => onName(nameDraft.trim().slice(0, 20) || name);
+  const nameField = (
+    <label className="block">
+      <span className="text-sm font-semibold text-white/70 uppercase">{ui.yourName}</span>
+      <input
+        value={nameDraft}
+        maxLength={20}
+        onChange={(e) => setNameDraft(e.target.value)}
+        onBlur={saveName}
+        onKeyDown={(e) => e.key === "Enter" && saveName()}
+        className={`${field} mt-1`}
+        autoComplete="nickname"
+      />
+    </label>
+  );
+  return (
+    <Panel title={ui.friendsTitle!} onClose={onClose} closeLabel={ui.close!}>
+      {!code ? (
+        <>
+          <p className="text-sm">{ui.friendsIntro}</p>
+          <div className="mt-4">{nameField}</div>
+          <button type="button" onClick={onStart} className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#ffd166] font-bold text-black">
+            {ui.startRoom}
+          </button>
+          <form
+            className="mt-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (joinCode.trim()) onJoin(joinCode);
+            }}
+          >
+            <label className="block text-sm font-semibold text-white/70 uppercase" htmlFor="walk-join-code">
+              {ui.haveCode}
+            </label>
+            <div className="mt-1 flex gap-2">
+              <input id="walk-join-code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} className={field} autoCapitalize="none" autoComplete="off" spellCheck={false} />
+              <button type="submit" className={`${darkBtn} border border-white/20 px-4`}>
+                {ui.join}
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-white/80">
+            {fmt(ui.roomCode!, { code: code.toUpperCase() })} · {status === "live" ? fmt(ui.inRoom!, { n: friends.length + 1 }) : ui.connecting}
+          </p>
+          <div className="mt-2 flex gap-2">
+            <input readOnly value={link} aria-label={ui.inviteLink} className={`${field} text-sm`} onFocus={(e) => e.currentTarget.select()} />
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard?.writeText(link).then(() => {
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1800);
+                });
+              }}
+              className={`${darkBtn} shrink-0 border border-white/20 px-4`}
+            >
+              {copied ? ui.copied : ui.copy}
+            </button>
+            {typeof navigator !== "undefined" && "share" in navigator ? (
+              <button type="button" onClick={() => void navigator.share({ title: ui.friendsTitle, url: link }).catch(() => {})} className={`${darkBtn} shrink-0 border border-white/20 px-4`}>
+                {ui.share}
+              </button>
+            ) : null}
+          </div>
+          <div className="mt-4">{nameField}</div>
+          <h3 className="mt-5 text-sm font-semibold text-white/70 uppercase">{ui.friends}</h3>
+          {friends.length ? (
+            <ul className="mt-1 flex flex-col">
+              {friends.map((f) => (
+                <li key={f.id} className="flex items-center justify-between gap-2 border-b border-white/10 py-1.5">
+                  <span className="text-sm">
+                    <span aria-hidden="true" className="mr-1.5 inline-block size-2.5 rounded-full bg-[#2e8b57]" />
+                    {f.name} {f.voice ? <span aria-label={ui.micOn}>🎙️</span> : null}
+                    <span className="ml-2 text-xs text-white/60">{fmt(ui.metresAway!, { m: Math.round(f.metres) })}</span>
+                  </span>
+                  <button type="button" onClick={() => onJump(f.id)} className={`${darkBtn} min-h-10 border border-white/20 px-3 text-xs`}>
+                    {ui.jumpTo}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1 text-sm text-white/75">{ui.alone}</p>
+          )}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <button type="button" aria-pressed={mic} onClick={onMic} className={`${darkBtn} border border-white/20 px-4 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}>
+              🎙️ {mic ? ui.micOn : ui.micOff}
+            </button>
+            <span className="text-xs text-white/70">{micError ? ui.micDenied : ui.voiceNote}</span>
+          </div>
+          <h3 className="mt-5 text-sm font-semibold text-white/70 uppercase">{ui.chat}</h3>
+          <ol ref={log} aria-live="polite" className="mt-1 flex max-h-40 flex-col gap-1 overflow-y-auto rounded-xl bg-black/25 p-2 text-sm">
+            {chat.map((c) => (
+              <li key={c.n}>
+                <b className={c.self ? "text-[#ffd166]" : "text-[#7ee2a8]"}>{c.name}:</b> {c.text}
+              </li>
+            ))}
+          </ol>
+          <form
+            className="mt-2 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!draft.trim()) return;
+              onSay(draft);
+              setDraft("");
+            }}
+          >
+            <input ref={chatBox} value={draft} maxLength={140} onChange={(e) => setDraft(e.target.value)} placeholder={ui.chatSay} aria-label={ui.chatSay} className={field} enterKeyHint="send" />
+            <button type="submit" className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-[#ffd166] px-4 font-bold text-black">
+              {ui.send}
+            </button>
+          </form>
+          <button type="button" onClick={onLeave} className={`${darkBtn} mt-5 border border-white/20 px-4`}>
+            {ui.leaveRoom}
+          </button>
+        </>
+      )}
+      <p className="mt-4 text-xs text-white/60">{ui.p2pNote}</p>
+    </Panel>
+  );
+}

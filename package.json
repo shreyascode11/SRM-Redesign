@@ -25,7 +25,8 @@
     "next-intl": "4.14.9",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "three": "0.186.1"
+    "three": "0.186.1",
+    "trystero": "0.26.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",

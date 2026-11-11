@@ -1,12 +1,16 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Outfit, WalkScript } from "@/lib/walk/script";
 import { chennaiHour, Collider, Paths, type World, type XZ } from "@/lib/walk/world";
-import { Dialogue, EmoteWheel, Finish, fmt, hudBtn, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
+import { Dialogue, EmoteWheel, Finish, fmt, FriendsPanel, hudBtn, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
+import { cleanRoomCode, newRoomCode, Party, type Pose } from "./party";
 import { type Npc, type Overlay, Scene, type Sky } from "./Scene";
 import { carrying, type Game, jump, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
+
+const noSub = () => () => {};
+const zero = () => 0;
 
 /** Light and sky: a painted teal day by default (anime style), or Chennai's real time of day. */
 function skyFor(h: number): Sky {
@@ -69,7 +73,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       sessionStorage.setItem("srm-walk-banner", hidden ? "hidden" : "shown");
     } catch {}
   };
-  const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish">(startWithOutfit ? "outfit" : null);
+  const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish" | "friends">(startWithOutfit ? "outfit" : null);
   const [toast, setToast] = useState<string | null>(null);
   const [quality, setQuality] = useState<"auto" | "low" | "high">("auto");
   const [touch, setTouch] = useState(false);
@@ -278,9 +282,13 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const timerQuest = timer ? script.quests.find((q) => q.id === timer.quest) : undefined;
   const secondsLeft = timer ? Math.max(0, Math.ceil((timer.ends - (clock || Date.now())) / 1000)) : 0;
 
+  // The multiplayer room you're in, if any (set further down); quest steps you do are shared with it.
+  const partyRef = useRef<Party | null>(null);
+  /** Finish a step of a quest. `from`: a friend's name, when the step was done by them in your room. */
   const advance = useCallback(
-    (questId: string, step: number) => {
+    (questId: string, step: number, from?: string) => {
       const q = script.quests.find((x) => x.id === questId)!;
+      if (!from) partyRef.current?.quest(questId, step);
       setProgress((p) => {
         const next = step + 1;
         const active = { ...p.active };
@@ -397,6 +405,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     g.crowd.emoteAt = performance.now() / 1000;
     if (id === "wave" || id === "vanakkam") g.anim.wave = 1.4;
     if (id === "cheer" || id === "party") g.anim.cheer = 1.2;
+    partyRef.current?.emote(glyph, id);
     // People nearby answer a wave with a wave.
     for (const n of npcs) if (Math.hypot(n.x - g.pos.x, n.z - g.pos.z) < 14) g.npc[n.id]!.wave = 1.4;
     const el = overlay.els.get("emote");
@@ -446,6 +455,13 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       else if (k === "m") setPanel("map");
       else if (k === "j") setPanel("quests");
       else if (k === "c") setPanel("outfit");
+      else if (k === "f") setPanel("friends");
+      else if (k === "t") {
+        // T: talk to your friends (opens the chat).
+        e.preventDefault();
+        setChatFocus((n) => n + 1);
+        setPanel("friends");
+      }
     };
     const up = (e: KeyboardEvent) => game.current?.keys.delete(e.key.toLowerCase());
     const blur = () => game.current?.keys.clear();
@@ -519,6 +535,162 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     };
   }, []);
 
+  // ── Multiplayer: play with friends in a room (see party.ts) ──
+  const [party, setParty] = useState<Party | null>(null);
+  const [partyStatus, setPartyStatus] = useState<"idle" | "connecting" | "live">("idle");
+  const [micError, setMicError] = useState(false);
+  const [chatFocus, setChatFocus] = useState(0);
+  const [myName, setMyName] = useState(() => {
+    try {
+      const n = localStorage.getItem("srm-walk-name");
+      if (n) return n.slice(0, 20);
+    } catch {
+      // No storage: a fresh name each time.
+    }
+    return fmt(ui.defaultName!, { n: 10 + Math.floor(Math.random() * 90) });
+  });
+  const partyVersion = useSyncExternalStore(party?.subscribe ?? noSub, party?.snapshot ?? zero, zero);
+  const progressRef = useRef(progress);
+  const flashRef = useRef(flash);
+  const advanceRef = useRef(advance);
+  useEffect(() => {
+    progressRef.current = progress;
+    flashRef.current = flash;
+    advanceRef.current = advance;
+  });
+  // A friend did a step of a quest: it counts for you too, if you're at the same step (or haven't started it yet).
+  const sharedStep = useCallback(
+    (questId: string, step: number, name: string) => {
+      const p = progressRef.current;
+      const q = script.quests.find((x) => x.id === questId);
+      if (!q || p.done.includes(questId)) return;
+      const at = p.active[questId];
+      if (at === step || (at === undefined && step === 0)) {
+        advanceRef.current(questId, step, name);
+        window.setTimeout(() => flashRef.current(fmt(ui.sharedStep!, { name, quest: q.title })), step + 1 >= q.steps.length ? 3300 : 900);
+      }
+    },
+    [script.quests, ui],
+  );
+  const joinParty = useCallback(
+    async (raw: string) => {
+      const code = cleanRoomCode(raw);
+      if (!code) return;
+      await partyRef.current?.leave();
+      const p = new Party(
+        code,
+        { name: myName, outfit },
+        {
+          onJoin: (name) => flashRef.current(fmt(ui.joined!, { name })),
+          onLeave: (name) => flashRef.current(fmt(ui.left!, { name })),
+          onQuest: (q, s, name) => sharedStep(q, s, name),
+        },
+        new Set(script.quests.map((q) => q.id)),
+      );
+      partyRef.current = p;
+      setParty(p);
+      setPartyStatus("connecting");
+      setMicError(false);
+      // The room goes in the address bar, so the page's own link is the invite.
+      const url = new URL(window.location.href);
+      url.searchParams.set("room", code);
+      window.history.replaceState(window.history.state, "", url);
+      try {
+        await p.connect();
+        setPartyStatus("live");
+      } catch {
+        partyRef.current = null;
+        setParty(null);
+        setPartyStatus("idle");
+        flashRef.current(ui.p2pFail!);
+      }
+    },
+    [myName, outfit, script.quests, sharedStep, ui],
+  );
+  const leaveParty = useCallback(() => {
+    void partyRef.current?.leave();
+    partyRef.current = null;
+    setParty(null);
+    setPartyStatus("idle");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("room");
+    window.history.replaceState(window.history.state, "", url);
+  }, []);
+  // Opened from an invite link (?room=…): join straight away.
+  const invited = useRef(false);
+  useEffect(() => {
+    if (invited.current) return;
+    invited.current = true;
+    const code = new URLSearchParams(window.location.search).get("room");
+    if (code) void joinParty(code);
+  }, [joinParty]);
+  // Leaving the game leaves the room.
+  useEffect(() => () => void partyRef.current?.leave(), []);
+  // Your name and outfit, to friends (and remembered).
+  useEffect(() => {
+    try {
+      localStorage.setItem("srm-walk-name", myName);
+    } catch {
+      // Not remembered; fine.
+    }
+    party?.profile({ name: myName, outfit });
+  }, [party, myName, outfit]);
+  // Where you are, ten times a second (and voices louder the closer friends stand).
+  useEffect(() => {
+    if (!party) return;
+    let last = "";
+    let lastAt = 0;
+    const id = window.setInterval(() => {
+      const g = game.current;
+      if (!g) return;
+      const r = (v: number) => Math.round(v * 100) / 100;
+      const pose: Pose = { x: r(g.pos.x), z: r(g.pos.z), h: r(g.heading), y: r(g.jumpY), sp: r(g.speed), d: g.anim.dance > 0 || g.anim.cheer > 0 ? 1 : 0 };
+      const key = JSON.stringify(pose);
+      const now = performance.now();
+      if (key !== last || now - lastAt > 1000) {
+        party.pose(pose);
+        last = key;
+        lastAt = now;
+      }
+      party.setVolumes(g.pos.x, g.pos.z);
+    }, 100);
+    return () => window.clearInterval(id);
+  }, [party]);
+  const friendsXZ = useCallback((): XZ[] => (party ? [...party.friends.values()].filter((f) => f.seen).map((f) => [f.draw.x, f.draw.z]) : []), [party]);
+  const jumpToFriend = useCallback(
+    (id: string) => {
+      const f = partyRef.current?.friends.get(id);
+      if (!f || !tools) return;
+      const [x, z] = tools.collider.resolve(f.draw.x + 1.6, f.draw.z + 1.6, 0.8);
+      game.current.pos = { x, z };
+      game.current.route = [];
+      setPanel(null);
+    },
+    [tools],
+  );
+  const toggleMic = useCallback(async () => {
+    const p = partyRef.current;
+    if (!p) return;
+    if (p.mic) return p.micOff();
+    try {
+      setMicError(false);
+      await p.micOn();
+    } catch {
+      setMicError(true);
+    }
+  }, []);
+  // Chat lines float in the corner for 8 s.
+  const [chatTick, setChatTick] = useState(0);
+  const lastChat = party?.chat.at(-1);
+  useEffect(() => {
+    if (!lastChat) return;
+    const t = window.setTimeout(() => setChatTick((n) => n + 1), 8200);
+    return () => window.clearTimeout(t);
+  }, [lastChat]);
+  const recentChat = party && chatTick >= 0 ? party.chat.filter((c) => Date.now() - c.at < 8000).slice(-3) : [];
+  const friendCount = party ? party.friends.size : 0;
+  void partyVersion;
+
   const held = carrying(script, progress);
   const talkingPerson = talk ? script.people.find((p) => p.id === talk.person) : undefined;
   const nearPlace = near.place ? script.places.find((p) => p.id === near.place) : undefined;
@@ -577,6 +749,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               done={progress.done}
               onChime={onChime}
               onTrain={onTrain}
+              party={party}
+              partyVersion={partyVersion}
             />
           </Canvas>
 
@@ -641,8 +815,22 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                     🗺️ <span className="hidden sm:inline">{ui.map}</span>
                     <span className="sr-only sm:hidden">{ui.map}</span>
                   </button>
+                  <button type="button" onClick={() => setPanel("friends")} className={`${hudBtn} pointer-events-auto relative ${party ? "ring-2 ring-[#2e8b57]" : ""}`}>
+                    👥 <span className="hidden sm:inline">{ui.friends}</span>
+                    <span className="sr-only sm:hidden">{ui.friends}</span>
+                    {friendCount ? <span className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-[#2e8b57] text-xs text-white">{friendCount}</span> : null}
+                  </button>
                 </div>
-                <Minimap world={world} game={game} people={peopleXZ} label={ui.minimap!} />
+                <Minimap world={world} game={game} people={peopleXZ} label={ui.minimap!} friends={party ? friendsXZ : undefined} />
+                {recentChat.length && panel !== "friends" ? (
+                  <ol aria-hidden="true" className="flex max-w-64 flex-col items-end gap-1">
+                    {recentChat.map((c) => (
+                      <li key={c.n} className="rounded-2xl bg-[#14101a]/80 px-3 py-1 text-sm text-white backdrop-blur">
+                        <b className={c.self ? "text-[#ffd166]" : "text-[#7ee2a8]"}>{c.name}:</b> {c.text}
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
               </div>
             </div>
 
@@ -816,6 +1004,35 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                 game.current.route = [];
                 setPanel(null);
               }}
+              friends={party ? friendsXZ : undefined}
+              friendList={party ? [...party.friends.values()].map((f) => ({ id: f.id, name: f.name })) : []}
+              onJumpFriend={jumpToFriend}
+            />
+          ) : null}
+          {panel === "friends" ? (
+            <FriendsPanel
+              script={script}
+              code={party?.code ?? null}
+              status={partyStatus}
+              link={party ? `${window.location.origin}${window.location.pathname}?room=${party.code}` : ""}
+              name={myName}
+              onName={setMyName}
+              friends={
+                party
+                  ? [...party.friends.values()].map((f) => ({ id: f.id, name: f.name, metres: Math.hypot(f.draw.x - game.current.pos.x, f.draw.z - game.current.pos.z), voice: !!f.voice }))
+                  : []
+              }
+              chat={party?.chat ?? []}
+              mic={!!party?.mic}
+              micError={micError}
+              onStart={() => void joinParty(newRoomCode())}
+              onJoin={(c) => void joinParty(c)}
+              onLeave={leaveParty}
+              onJump={jumpToFriend}
+              onSay={(t) => party?.say(t)}
+              onMic={() => void toggleMic()}
+              onClose={() => setPanel(null)}
+              focusChat={chatFocus > 0}
             />
           ) : null}
           {panel === "outfit" ? <OutfitPanel script={script} outfit={outfit} onChange={setOutfit} onDone={() => setPanel(null)} /> : null}

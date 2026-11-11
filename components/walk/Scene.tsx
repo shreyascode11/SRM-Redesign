@@ -6,6 +6,8 @@ import * as THREE from "three";
 import type { Outfit } from "@/lib/walk/script";
 import { chennaiHour, type Collider, type Paths, type World, type XZ } from "@/lib/walk/world";
 import { type Anim, Character, newAnim, OUTFIT_SIZES } from "./Character";
+import { Friends } from "./Friends";
+import type { Party } from "./party";
 import { Railway } from "./Railway";
 import { Held, QUEST_LOOPS, Rewards } from "./Rewards";
 import { curve, dropAt, toon } from "./curve";
@@ -28,7 +30,7 @@ const WALK = 4.2;
 /** Students walking about, and their names (made up; they are characters, not real people). */
 const CROWD_SIZE = 16;
 const CROWD_NAMES = ["Arjun", "Priya", "Karthik", "Divya", "Rahul", "Ananya", "Vikram", "Sneha", "Aditya", "Meera", "Rohan", "Kavya", "Siddharth", "Lakshmi", "Farhan", "Aisha"];
-const RUN = 8;
+const RUN = 10;
 const tmp = new THREE.Vector3();
 const UP = 1.35;
 
@@ -64,6 +66,8 @@ export function Scene({
   done,
   onChime,
   onTrain,
+  party,
+  partyVersion,
 }: {
   world: World;
   collider: Collider;
@@ -85,6 +89,9 @@ export function Scene({
   onChime: (hour: number) => void;
   /** A train sets off towards Potheri while you're near the station. */
   onTrain: () => void;
+  /** Friends in your multiplayer room, if you're in one. */
+  party: Party | null;
+  partyVersion: number;
 }) {
   const { camera, gl, size, scene } = useThree();
   const player = useRef<THREE.Group>(null);
@@ -356,6 +363,13 @@ export function Scene({
     if (camPos.current.lengthSq() === 0 || g.reduced) camPos.current.copy(want3);
     else camPos.current.lerp(want3, Math.min(1, dt * 5));
     camera.position.copy(camPos.current);
+    // Running widens the view a little, so speed shows (not with reduced motion).
+    const pc = camera as THREE.PerspectiveCamera;
+    const wantFov = g.reduced ? 56 : 56 + Math.max(0, Math.min(1, (g.speed - WALK) / (RUN - WALK))) * 10;
+    if (Math.abs(pc.fov - wantFov) > 0.05) {
+      pc.fov += (wantFov - pc.fov) * Math.min(1, dt * 4);
+      pc.updateProjectionMatrix();
+    }
     camera.lookAt(tx, UP - 0.6 + g.jumpY * 0.6, tz);
 
     // ── People: look at you when you're near, turn to you while talking; hidden when far away ──
@@ -588,6 +602,7 @@ export function Scene({
       ))}
       <Rewards world={world} npcs={npcs} done={done} />
       {world.rail ? <Railway world={world} game={game} onTrain={onTrain} /> : null}
+      {party ? <Friends party={party} version={partyVersion} /> : null}
       {walkers.map((w) => (
         <group
           key={w.i}

@@ -334,14 +334,16 @@ export function Character({ outfit, anim, scale = 1, blob = false }: { outfit: O
     const target = Math.min(1, a.speed / 3.5);
     amt.current += (target - amt.current) * Math.min(1, dt * 8);
     const k = amt.current;
-    const run = a.speed > 6 ? 1.3 : 1;
-    phase.current += dt * (1.6 + a.speed * 1.75);
+    // r: 0 walking … 1 sprinting. Running is its own gait: longer strides, knees up, elbows bent, leaning in.
+    const r = Math.max(0, Math.min(1, (a.speed - 4.6) / 4.5));
+    const run = 1 + r * 0.45;
+    phase.current += dt * (1.6 + a.speed * (1.75 - r * 0.35));
     const s = Math.sin(phase.current);
     if (legL.current && legR.current && kneeL.current && kneeR.current) {
       legL.current.rotation.x = s * 0.62 * k * run;
       legR.current.rotation.x = -s * 0.62 * k * run;
-      kneeL.current.rotation.x = Math.max(0, -Math.sin(phase.current + 0.9)) * 0.95 * k * run;
-      kneeR.current.rotation.x = Math.max(0, Math.sin(phase.current + 0.9)) * 0.95 * k * run;
+      kneeL.current.rotation.x = Math.max(0, -Math.sin(phase.current + 0.9)) * 0.95 * k * (run + r * 0.5);
+      kneeR.current.rotation.x = Math.max(0, Math.sin(phase.current + 0.9)) * 0.95 * k * (run + r * 0.5);
     }
     let jump = 0;
     if (armL.current && armR.current && elbowL.current && elbowR.current) {
@@ -349,8 +351,8 @@ export function Character({ outfit, anim, scale = 1, blob = false }: { outfit: O
       armR.current.rotation.x = s * 0.55 * k * run;
       armL.current.rotation.z = -0.08 - Math.sin(t * 1.6) * 0.015;
       armR.current.rotation.z = 0.08 + Math.sin(t * 1.6) * 0.015;
-      elbowL.current.rotation.x = -(0.18 + k * 0.45 * run);
-      elbowR.current.rotation.x = -(0.18 + k * 0.45 * run);
+      elbowL.current.rotation.x = -(0.18 + k * 0.45 + r * 1.0);
+      elbowR.current.rotation.x = -(0.18 + k * 0.45 + r * 1.0);
       if (a.wave > 0) {
         a.wave -= dt;
         armR.current.rotation.z = 2.7;
@@ -379,9 +381,9 @@ export function Character({ outfit, anim, scale = 1, blob = false }: { outfit: O
       armL.current.rotation.x = mix(armL.current.rotation.x, -0.35, air);
       armR.current.rotation.x = mix(armR.current.rotation.x, -0.35, air);
     }
-    if (body.current) body.current.position.y = Math.abs(Math.cos(phase.current)) * 0.045 * k * run * (1 - air) + Math.sin(t * 2) * 0.004 + jump;
+    if (body.current) body.current.position.y = Math.abs(Math.cos(phase.current)) * (0.045 + r * 0.06) * k * (1 - air) + Math.sin(t * 2) * 0.004 + jump;
     if (torso.current) {
-      torso.current.rotation.x = 0.07 * k * run;
+      torso.current.rotation.x = (0.07 + r * 0.22) * k;
       torso.current.rotation.y = s * 0.07 * k;
     }
     if (head.current) {
