@@ -206,6 +206,56 @@ export function Grounds({ world }: { world: World }) {
       }
     });
 
+    // ── Park lawns: round flower beds ringed by a low hedge, as in the gardens in front of Tech Park ──
+    const inside = (x: number, z: number, poly: XZ[]) => {
+      let c = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const [xi, zi] = poly[i]!;
+        const [xj, zj] = poly[j]!;
+        if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c;
+      }
+      return c;
+    };
+    const nearRoad = (x: number, z: number) =>
+      world.roads.some((r) =>
+        r.p.some((a, i) => {
+          const c = r.p[i + 1];
+          if (!c) return false;
+          const dx = c[0] - a[0];
+          const dz = c[1] - a[1];
+          const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1)));
+          return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz) < r.w / 2 + 4;
+        }),
+      );
+    const FLOWERS = ["#f25c7a", "#ffd166", "#ffffff", "#e63946", "#c77dff"].map(col);
+    const beds: XZ[] = [];
+    for (const g of world.green) {
+      if (g.s && g.s !== "park") continue;
+      const xs = g.p.map((q) => q[0]);
+      const zs = g.p.map((q) => q[1]);
+      const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+      const want = Math.min(7, Math.max(1, Math.round(((x1 - x0) * (z1 - z0)) / 900)));
+      for (let tries = 0, made = 0; made < want && tries < 80; tries++) {
+        const x = x0 + rnd() * (x1 - x0);
+        const z = z0 + rnd() * (z1 - z0);
+        if (!inside(x, z, g.p) || nearRoad(x, z) || world.buildings.some((bl) => inside(x, z, bl.p) || bl.p.some((q) => Math.hypot(q[0] - x, q[1] - z) < 6))) continue;
+        if (beds.some((q) => Math.hypot(q[0] - x, q[1] - z) < 9) || world.trees.some((t) => Math.hypot(t[0] - x, t[1] - z) < 3.5)) continue;
+        if (Object.values(world.places).some((pl) => Math.hypot(pl.door[0] - x, pl.door[1] - z) < 8)) continue;
+        beds.push([x, z]);
+        made++;
+        const hedge = new THREE.TorusGeometry(2.3, 0.32, 6, 20);
+        hedge.rotateX(Math.PI / 2);
+        addGeo(b, hedge, place(x, 0.3, z), col("#3f7f43"));
+        addGeo(b, new THREE.CylinderGeometry(2.1, 2.1, 0.14, 20), place(x, 0.07, z), col("#7a5a3c"));
+        addGeo(b, new THREE.SphereGeometry(0.62, 10, 8), place(x, 0.55, z), col("#4c8f4a"));
+        for (let k = 0; k < 9; k++) {
+          const ang = (k / 9) * Math.PI * 2 + rnd();
+          const rr = 0.95 + rnd() * 0.75;
+          addGeo(b, new THREE.SphereGeometry(0.2 + rnd() * 0.08, 7, 5), place(x + Math.cos(ang) * rr, 0.3, z + Math.sin(ang) * rr), FLOWERS[Math.floor(rnd() * FLOWERS.length)]!);
+        }
+      }
+    }
+
     // ── Car parks: painted bays and a few parked cars ──
     for (const [i, lot] of (world.parking ?? []).entries()) {
       const o = obb(lot.p);

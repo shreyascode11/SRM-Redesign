@@ -21,6 +21,18 @@ const BOX = new THREE.BoxGeometry(1, 1, 1);
 const CYL = new THREE.CylinderGeometry(1, 1, 1, 16);
 const OCT = new THREE.CylinderGeometry(1, 1, 1, 8);
 const BALL = new THREE.SphereGeometry(1, 12, 8);
+/** The round head of a window: a half disc, 1 across (x), 0.5 high, 1 deep (z). */
+const ARCH = (() => {
+  const g = new THREE.CylinderGeometry(0.5, 0.5, 1, 18, 1, false, -Math.PI / 2, Math.PI);
+  g.rotateX(-Math.PI / 2);
+  return g;
+})();
+/** A pediment: a triangle 1 wide and 1 high standing on y = 0, 1 deep. */
+const PEDIMENT = (() => {
+  const g = new THREE.ExtrudeGeometry(new THREE.Shape([new THREE.Vector2(-0.5, 0), new THREE.Vector2(0.5, 0), new THREE.Vector2(0, 1)]), { depth: 1, bevelEnabled: false });
+  g.translate(0, 0, -0.5);
+  return g;
+})();
 const col = (h: string) => new THREE.Color(h);
 
 /** Place `geo` in a local frame (origin ox, oz, turned by ry), at local (x, y, z), scaled, turned ly about local up. */
@@ -327,39 +339,98 @@ function auditorium(b: Buf, signs: Sign[], poly: [number, number][]) {
     const [wx, wz] = at(x, z);
     addGeo(b, BOX, M.compose(P.set(wx, y, wz), Q.setFromEuler(E.set(0, ry, roll, "YXZ")), S.set(sx, sy, sz)), color);
   };
-  const cream = col("#ead9bd");
-  const fin = col("#f7f1e6");
-  const terracotta = col("#c4643d");
+  // Colours and the classical front follow a photo of the auditorium on Wikimedia Commons: sage walls with white
+  // pilasters, tall arched windows, pedimented bays, a balustraded roofline and a globe out front.
+  const cream = col("#a9b8aa");
+  const fin = col("#f4f1e8");
   const stone = col("#cfc6b8");
-  const glass = col("#3d5d78");
+  const glass = col("#2f4a5f");
   const dark = col("#2c2f36");
-  const roofC = col("#9fb0ba");
   const H = 17; // the main hall
   const front = -D / 2; // the front wall's z
   const zone = 7; // the ramps and mini halls take the front 7 m
   const hallZ0 = front + zone;
   const hallD = D / 2 - hallZ0;
   const hallMid = (hallZ0 + D / 2) / 2;
+  /** A window with a round head: `w` wide, its sill at y0 and the spring of the arch at y1, on a wall at z. */
+  const arched = (x: number, y0: number, y1: number, w: number, z: number, side: 0 | 1 | -1 = 0) => {
+    const [sx, sz, px, pz] = side ? [0.14, w, side * (W / 2 + 0.08), z] : [w, 0.14, x, z];
+    put(b, BOX, px, (y0 + y1) / 2, pz, sx, y1 - y0, sz, glass);
+    if (side) {
+      const head = ARCH.clone();
+      head.rotateY(Math.PI / 2);
+      put(b, head, px, y1, pz, 0.14, w, w, glass);
+      head.dispose();
+    } else put(b, ARCH, px, y1, pz, w, w, 0.14, glass);
+  };
 
-  // Main hall: walls, a terracotta band at the top, white fins all round, a vaulted metal roof.
+  // Main hall: walls, a plinth, a white cornice and a balustrade along the roofline.
   put(b, BOX, 0, H / 2, hallMid, W, H, hallD, cream);
-  put(b, BOX, 0, H - 0.8, hallMid, W + 0.3, 1.6, hallD + 0.3, terracotta);
-  for (let x = -W / 2 + 1.5; x <= W / 2 - 1.4; x += 2.6) {
-    put(b, BOX, x, H / 2 - 0.8, hallZ0 - 0.25, 0.5, H - 1.6, 0.6, fin);
-    put(b, BOX, x, H / 2 - 0.8, D / 2 + 0.25, 0.5, H - 1.6, 0.6, fin);
+  put(b, BOX, 0, 0.6, hallMid, W + 0.5, 1.2, hallD + 0.5, stone);
+  put(b, BOX, 0, H - 0.45, hallMid, W + 1, 0.9, hallD + 1, fin);
+  put(b, BOX, 0, H + 1.05, hallZ0 - 0.35, W + 0.8, 0.18, 0.32, fin);
+  for (let x = -W / 2; x <= W / 2 + 0.01; x += 0.95) put(b, BOX, x, H + 0.5, hallZ0 - 0.35, 0.16, 1.0, 0.16, fin);
+  for (const sx of [-1, 1]) {
+    put(b, BOX, sx * (W / 2 + 0.35), H + 1.05, hallMid, 0.32, 0.18, hallD + 0.8, fin);
+    for (let z = hallZ0; z <= D / 2 + 0.01; z += 0.95) put(b, BOX, sx * (W / 2 + 0.35), H + 0.5, z, 0.16, 1.0, 0.16, fin);
   }
-  for (let z = hallZ0 + 1.5; z <= D / 2 - 1.4; z += 2.6)
-    for (const sx of [-1, 1]) put(b, BOX, sx * (W / 2 + 0.25), H / 2 - 0.8, z, 0.6, H - 1.6, 0.5, fin);
+  // Pilasters and tall arched windows, bay by bay, on the front and both sides.
+  const bays = Math.round(W / 3.6);
+  const bw = W / bays;
+  for (let i = 0; i <= bays; i++) put(b, BOX, -W / 2 + i * bw, H / 2 - 0.4, hallZ0 - 0.22, 0.6, H - 0.9, 0.5, fin);
+  for (let i = 0; i < bays; i++) {
+    const x = -W / 2 + (i + 0.5) * bw;
+    if (Math.abs(x) < 7.4 || Math.abs(x) > W / 2 - 6.4) continue; // the centre and end bays have their own
+    arched(x, 8.2, 12.6, bw * 0.5, hallZ0 - 0.08);
+  }
+  const sideBays = Math.max(2, Math.round(hallD / 3.6));
+  for (let i = 0; i <= sideBays; i++) for (const sx of [-1, 1]) put(b, BOX, sx * (W / 2 + 0.22), H / 2 - 0.4, hallZ0 + (i * hallD) / sideBays, 0.5, H - 0.9, 0.6, fin);
+  for (let i = 0; i < sideBays; i++)
+    for (const sx of [-1, 1] as const) {
+      const z = hallZ0 + ((i + 0.5) * hallD) / sideBays;
+      arched(0, 8.2, 12.6, 1.7, z, sx);
+      arched(0, 2.4, 5.2, 1.7, z, sx);
+    }
+  // The centre bay stands forward and taller, under a pediment, round one great arched window.
+  put(b, BOX, 0, (H + 2.4) / 2, hallZ0 - 0.35, 14.4, H + 2.4, 1.3, cream);
+  for (const x of [-6.9, 6.9]) put(b, BOX, x, (H + 2.4) / 2, hallZ0 - 0.75, 0.9, H + 2.4, 0.8, fin);
+  put(b, BOX, 0, H + 2.4, hallZ0 - 0.4, 15.6, 0.7, 1.7, fin);
+  put(b, PEDIMENT, 0, H + 2.75, hallZ0 - 0.4, 15.6, 3.2, 1.5, fin);
+  put(b, PEDIMENT, 0, H + 3.1, hallZ0 - 1.12, 12.4, 2.2, 0.1, cream);
+  arched(0, 6.2, 11.2, 8.4, hallZ0 - 1.04);
+  for (const x of [-2.8, 0, 2.8]) put(b, BOX, x, 10.6, hallZ0 - 1.14, 0.2, 8.8, 0.08, fin);
+  put(b, BOX, 0, 11.2, hallZ0 - 1.14, 8.4, 0.2, 0.08, fin);
+  // A smaller pedimented bay at each end.
+  for (const sx of [-1, 1]) {
+    const x = sx * (W / 2 - 3.4);
+    put(b, BOX, x, (H + 1) / 2, hallZ0 - 0.2, 6.2, H + 1, 0.8, cream);
+    for (const k of [-1, 1]) put(b, BOX, x + k * 2.9, (H + 1) / 2, hallZ0 - 0.5, 0.6, H + 1, 0.5, fin);
+    put(b, BOX, x, H + 1, hallZ0 - 0.25, 7, 0.5, 1.2, fin);
+    put(b, PEDIMENT, x, H + 1.25, hallZ0 - 0.25, 7, 1.9, 1.1, fin);
+    arched(x, 7.6, 12.2, 2.6, hallZ0 - 0.62);
+  }
+  // A balustrade along the forecourt (open at the middle), and the globe on its pedestal.
+  for (const sx of [-1, 1]) {
+    const x0 = sx * 5.5;
+    const x1 = sx * (W / 2 + 1);
+    put(b, BOX, (x0 + x1) / 2, 1.02, front - 4.2, Math.abs(x1 - x0), 0.16, 0.34, fin);
+    put(b, BOX, (x0 + x1) / 2, 0.12, front - 4.2, Math.abs(x1 - x0), 0.24, 0.4, fin);
+    for (let x = Math.min(x0, x1); x <= Math.max(x0, x1) + 0.01; x += 0.8) put(b, BOX, x, 0.57, front - 4.2, 0.15, 0.78, 0.15, fin);
+    put(b, BOX, x0, 0.75, front - 4.2, 0.6, 1.5, 0.6, fin);
+    put(b, BALL, x0, 1.75, front - 4.2, 0.36, 0.36, 0.36, fin);
+  }
+  put(b, BOX, W / 2 - 6, 0.9, front - 7, 1.5, 1.8, 1.5, stone);
+  put(b, BALL, W / 2 - 6, 3.0, front - 7, 1.25, 1.25, 1.25, col("#5b8fc4"));
   {
-    const vault = new THREE.CylinderGeometry(1, 1, 1, 28, 1, false, 0, Math.PI);
-    vault.rotateZ(Math.PI / 2);
-    vault.rotateX(-Math.PI / 2);
-    put(b, vault, 0, H, hallMid, W + 0.6, 3.2, hallD / 2 + 0.3, roofC);
-    vault.dispose();
+    const ring = new THREE.TorusGeometry(1, 0.035, 6, 28);
+    put(b, ring, W / 2 - 6, 3.0, front - 7, 1.42, 1.42, 1.42, col("#e2b13c"));
+    ring.rotateX(Math.PI / 2);
+    put(b, ring, W / 2 - 6, 3.0, front - 7, 1.42, 1.42, 1.42, col("#e2b13c"));
+    ring.dispose();
   }
-  // The upper entrance: tall glass on the hall front, behind the landing.
-  put(b, BOX, 0, 9.4, hallZ0 - 0.06, 10.5, 7.6, 0.12, glass);
-  for (const x of [-3.5, 0, 3.5]) put(b, BOX, x, 9.4, hallZ0 - 0.14, 0.18, 7.6, 0.08, dark);
+  // The upper entrance: glass doors on the hall front, behind the landing.
+  put(b, BOX, 0, 7.2, hallZ0 - 1.06, 6, 3.2, 0.12, col("#3d5d78"));
+  for (const x of [-1.5, 0, 1.5]) put(b, BOX, x, 7.2, hallZ0 - 1.14, 0.14, 3.2, 0.08, dark);
 
   // The landing, its porch and the name board.
   const landY = 5.6;
@@ -409,11 +480,7 @@ function auditorium(b: Buf, signs: Sign[], poly: [number, number][]) {
     pole.dispose();
     put(b, BALL, x, 4.5, front - 1.2, 0.32, 0.32, 0.32, col("#fff3c4"));
   }
-  // Event banners on the hall front, either side of the porch.
-  for (const [x, c] of [
-    [-landW / 2 - 3.2, "#f2b632"],
-    [landW / 2 + 3.2, "#2e8b57"],
-  ] as const) put(b, BOX, x, 11, hallZ0 - 0.5, 1.6, 6, 0.08, col(c));
+
 }
 
 const xyz = (xz: [number, number], y: number) => ({ x: xz[0], y, z: xz[1] });

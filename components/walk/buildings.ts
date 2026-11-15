@@ -7,7 +7,9 @@ import type { World, XZ } from "@/lib/walk/world";
  * draws framed windows with ink lines. Real geometry adds what gives a building its character: floor bands, roof
  * parapets and caps, black rooftop water tanks, AC units, entrance canopies and awnings, signboards, and the
  * signature facades of SRM's best-known buildings (from SRM's own photos):
- *  - SRM Tech Park: a yellow frame around blue glass, red and blue stripes, a maroon roof cap
+ *  - SRM Tech Park (from a photo on Wikimedia Commons): a yellow centre with a grid of blue glass and small square
+ *    windows, pink bands either side, white wings, a red canopy over a glass lobby and wide steps
+ *  - Biotech Block (same source): white, with a curved wall of dark blue glass in a slate frame and a porch
  *  - SRM University Building: an orange tower, punched windows, a tall bronze glass panel, an arch at the foot
  *  - Hostels: cream walls with white floor bands, framed windows with grills, a blue name plate, a green awning
  */
@@ -16,7 +18,8 @@ import type { World, XZ } from "@/lib/walk/world";
 type Style = { wall: string; roof: string; win: number; bands?: string; parapet?: string; cap?: string; tanks?: number };
 
 const STYLES: Record<string, Style> = {
-  techPark: { wall: "#f1efe8", roof: "#d8d4c8", win: 2, cap: "#8b2d32", parapet: "#e9e6dc" },
+  techPark: { wall: "#f6f6f1", roof: "#d8d4c8", win: 2, parapet: "#eeeee8" },
+  biotech: { wall: "#f4f3ee", roof: "#d3cdbf", win: 2, bands: "#e3e1d8", parapet: "#e9e7df", tanks: 2 },
   // Tech Park 2: the orange tower beside Tech Park (SRM's campus photo): punched windows, a bronze glass panel, an arch.
   orangeTower: { wall: "#e8935a", roof: "#cfc6b4", win: 1, cap: "#4a3a32" },
   // The University Building: white and cream, with blue-grey glass.
@@ -34,6 +37,7 @@ const BY_KIND = ["other", "academic", "hostel", "food", "academic", "health", "f
 
 const styleOf = (b: World["buildings"][number]): Style => {
   if (b.n === "tech-park") return STYLES.techPark!;
+  if (b.n === "biotech") return STYLES.biotech!;
   if (b.n === "tech-park-2") return STYLES.orangeTower!;
   if (b.n === "university-building") return STYLES.ub!;
   return STYLES[BY_KIND[b.k] ?? "other"]!;
@@ -397,17 +401,53 @@ export function buildCampus(world: World, names: Record<string, string>) {
     }
 
     if (bld.n === "tech-park") {
-      // Yellow frame round a tall blue glass panel, with red and blue stripes either side.
-      const w = Math.min(len * 0.45, 22);
-      const t0 = Math.max(w / 2 + 1, Math.min(len - w / 2 - 1, tDoor));
-      const [cx, cz] = at(t0, 0.25);
-      addGeo(glass, BOX, place(cx, h / 2 + 1, cz, w - 1.4, h - 4, 0.12, ry), col("#2f5fae"));
-      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 - w / 2, 0.4), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.2, h - 1, 0.6)), col("#f2c42e"));
-      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 + w / 2, 0.4), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.2, h - 1, 0.6)), col("#f2c42e"));
-      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0, 0.4), h - 1.2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(w + 1.2, 1.6, 0.6)), col("#f2c42e"));
-      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 - w / 2 - 1.6, 0.3), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.4, h - 2, 0.3)), col("#c8323d"));
-      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 + w / 2 + 1.6, 0.3), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.4, h - 2, 0.3)), col("#2b55b0"));
-      signs.push({ text: "SRM Tech Park", bg: "#2f5fae", fg: "#ffffff", ...pos3(at(t0, 0.5), 5.5), ry, w: 8, h: 1.8 });
+      // The front as it is: a yellow centre holding a grid of blue glass, small square windows down its sides, pink
+      // bands, a red canopy over the glass lobby, and wide steps.
+      // The yellow centre fills the recess between the two white wings, less the pink bands.
+      const w = Math.max(8, Math.min(len - 5.8, 26));
+      const t0 = len / 2;
+      const yellow = col("#f4d21f");
+      const blue = col("#1f4fa8");
+      const box = (t: number, out: number, y: number, sx: number, sy: number, sz: number, c: THREE.Color, buf = trim) =>
+        addGeo(buf, BOX, M.compose(P.set(...withY(at(t, out), y)), Q.setFromEuler(E.set(0, ry, 0)), S.set(sx, sy, sz)), c);
+      box(t0, 0.3, h / 2 + 0.6, w, h + 1.2, 0.7, yellow);
+      for (const k of [-1, 1]) box(t0 + k * (w / 2 + 1.5), 0.25, h / 2, 2.6, h, 0.5, col("#f08ca4"));
+      // The glass grid, top centre, with yellow bars.
+      const gw = w * 0.56;
+      const g0 = h * 0.42;
+      const g1 = h - 3;
+      box(t0, 0.68, (g0 + g1) / 2, gw, g1 - g0, 0.1, blue, glass);
+      for (const k of [-1 / 6, 1 / 6]) box(t0 + k * gw, 0.74, (g0 + g1) / 2, 0.35, g1 - g0, 0.1, yellow);
+      for (const k of [1 / 3, 2 / 3]) box(t0, 0.74, g0 + (g1 - g0) * k, gw, 0.35, 0.1, yellow);
+      // Small square windows down both sides, and a row under the grid.
+      for (let y = 9; y < h - 2; y += 3.4) for (const k of [-1, 1]) box(t0 + k * w * 0.41, 0.68, y, 1.2, 1.2, 0.1, blue, glass);
+      for (const k of [-0.2, -0.07, 0.07, 0.2]) box(t0 + k * w, 0.68, g0 - 2.4, 1.2, 1.2, 0.1, blue, glass);
+      // Glass lobby, red canopy on yellow posts, and the steps up.
+      box(t0, 0.72, 2.9, w * 0.5, 5.4, 0.12, col("#9ec8d8"), glass);
+      for (const k of [-0.25, -0.083, 0.083, 0.25]) box(t0 + k * w, 0.8, 2.9, 0.3, 5.4, 0.2, yellow);
+      box(t0, 2.6, 6.0, w * 0.6, 0.45, 4.6, col("#d8353f"));
+      for (const k of [-0.27, 0.27]) box(t0 + k * w, 4.4, 3.0, 0.4, 6, 0.4, yellow);
+      for (const [out, y] of [
+        [3.2, 0.45],
+        [4.6, 0.3],
+        [6.0, 0.15],
+      ] as const) box(t0, out, y / 2, w * 0.8, y, 3.2, col("#d5d0c4"));
+      signs.push({ text: "SRM Tech Park", bg: "#1f4fa8", fg: "#ffffff", ...pos3(at(t0, 0.8), g0 + (g1 - g0) * 0.5), ry, w: gw * 0.3, h: gw * 0.1 });
+    } else if (bld.n === "biotech") {
+      // A curved wall of dark blue glass, banded in white at every floor, held in a slate frame; a porch on columns.
+      const w = Math.min(len * 0.42, 15);
+      const t0 = Math.max(w / 2 + 2, Math.min(len - w / 2 - 2, tDoor));
+      const slate = col("#4d6178");
+      const [cx, cz] = at(t0, 0);
+      addGeo(glass, CYL, place(cx, h / 2 + 2.2, cz, w / 2, h - 4.6, 2.4, ry), col("#22405f"));
+      for (let y = 7.6; y < h; y += 3.4) addGeo(trim, CYL, place(cx, y, cz, w / 2 + 0.12, 0.5, 2.55, ry), col("#f4f3ee"));
+      for (const k of [-1, 1]) addGeo(trim, BOX, M.compose(P.set(...withY(at(t0 + k * (w / 2 + 0.5), 0.3), h / 2)), Q.setFromEuler(E.set(0, ry, 0)), S.set(1.1, h + 0.4, 0.9)), slate);
+      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0, 0.3), h + 0.1)), Q.setFromEuler(E.set(0, ry, 0)), S.set(w + 2.1, 0.9, 0.9)), slate);
+      addGeo(trim, BOX, M.compose(P.set(...withY(at(t0, 3.2), 4.4)), Q.setFromEuler(E.set(0, ry, 0)), S.set(w * 0.9, 0.4, 6)), col("#f4f3ee"));
+      for (const k of [-0.36, -0.12, 0.12, 0.36]) {
+        const [px, pz] = at(t0 + k * w, 5.6);
+        addGeo(trim, CYL, place(px, 2.1, pz, 0.26, 4.2, 0.26), col("#f4f3ee"));
+      }
     } else if (bld.n === "tech-park-2") {
       // The orange tower: a tall bronze glass panel and an arch at the foot.
       const w = Math.min(len * 0.42, 18);
