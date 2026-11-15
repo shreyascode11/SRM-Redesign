@@ -4,7 +4,8 @@ import { Canvas } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Outfit, WalkScript } from "@/lib/walk/script";
 import { chennaiHour, Collider, Paths, type World, type XZ } from "@/lib/walk/world";
-import { Dialogue, EmoteWheel, Finish, fmt, FriendsPanel, hudBtn, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
+import { Dialogue, EmoteWheel, Finish, fmt, FriendsPanel, hudBtn, HuntPanel, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
+import { bestFor, fmtTime, huntNumber, huntPlaces, KIND_EMOJI, saveHunt, streak } from "./hunt";
 import { cleanRoomCode, newRoomCode, Party, type Pose } from "./party";
 import { type Npc, type Overlay, Scene, type Sky } from "./Scene";
 import { carrying, type Game, jump, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
@@ -73,7 +74,10 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       sessionStorage.setItem("srm-walk-banner", hidden ? "hidden" : "shown");
     } catch {}
   };
-  const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish" | "friends">(startWithOutfit ? "outfit" : null);
+  const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish" | "friends" | "hunt">(startWithOutfit ? "outfit" : null);
+  // The Daily Hunt in progress (hunt.ts): which hunt, its five places, how many are found, and when it started.
+  const [hunt, setHunt] = useState<null | { n: number; places: string[]; i: number; start: number }>(null);
+  const [huntResult, setHuntResult] = useState<null | { n: number; ms: number; best: number; places: string[] }>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [quality, setQuality] = useState<"auto" | "low" | "high">("auto");
   const [touch, setTouch] = useState(false);
@@ -155,6 +159,12 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const tracked = progress.tracked && progress.active[progress.tracked] !== undefined ? progress.tracked : (Object.keys(progress.active)[0] ?? null);
   const targetInfo = useMemo(() => {
     if (!world) return null;
+    // During the Daily Hunt, the next place to find comes first.
+    if (hunt) {
+      const id = hunt.places[hunt.i];
+      const p = id ? world.places[id] : undefined;
+      if (id && p) return { xz: p.door, hint: fmt(ui.huntFind!, { name: placeNames[id] ?? id, n: hunt.i + 1, of: hunt.places.length }), pick: null };
+    }
     const q = tracked ? script.quests.find((x) => x.id === tracked) : null;
     if (q) {
       const s = stepTarget(q, progress.active[q.id]!);
@@ -174,7 +184,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       if (n) return { xz: [n.x, n.z] as XZ, hint: first.steps[0]!.hint, pick: null };
     }
     return null;
-  }, [world, tracked, progress, script.quests, npcs]);
+  }, [world, tracked, progress, script.quests, npcs, hunt, placeNames, ui]);
   useEffect(() => {
     if (game.current) game.current.target = targetInfo?.xz ?? null;
   }, [targetInfo]);
@@ -661,12 +671,13 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     (id: string) => {
       const f = partyRef.current?.friends.get(id);
       if (!f || !tools) return;
+      if (hunt) return flash(ui.huntNoJump!);
       const [x, z] = tools.collider.resolve(f.draw.x + 1.6, f.draw.z + 1.6, 0.8);
       game.current.pos = { x, z };
       game.current.route = [];
       setPanel(null);
     },
-    [tools],
+    [tools, hunt, flash, ui],
   );
   const toggleMic = useCallback(async () => {
     const p = partyRef.current;
@@ -690,6 +701,89 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const recentChat = party && chatTick >= 0 ? party.chat.filter((c) => Date.now() - c.at < 8000).slice(-3) : [];
   const friendCount = party ? party.friends.size : 0;
   void partyVersion;
+
+  // ── The Daily Campus Hunt (hunt.ts): today's five places, from the main gate, against the clock ──
+  const huntN = huntNumber();
+  const today = useMemo(() => {
+    if (!world) return [];
+    const list = script.places.filter((p) => world.places[p.id]).map((p) => ({ id: p.id, kind: p.kind, door: world.places[p.id]!.door }));
+    return huntPlaces(huntN, list, world.places[world.spawn]?.door ?? [0, 0]);
+  }, [world, huntN, script.places]);
+  const kindOf = useCallback((id: string) => script.places.find((p) => p.id === id)?.kind ?? "", [script.places]);
+  const ding = useCallback((final: boolean) => {
+    try {
+      audio.current ??= new AudioContext();
+      const ac = audio.current;
+      (final ? [523, 659, 784, 1047] : [659, 988]).forEach((f, k) => {
+        const t = ac.currentTime + k * 0.11;
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = "triangle";
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        o.connect(g).connect(ac.destination);
+        o.start(t);
+        o.stop(t + 0.4);
+      });
+    } catch {
+      // No sound: the toast says it.
+    }
+  }, []);
+  const startHunt = useCallback(() => {
+    if (!world || !today.length) return;
+    // Everyone starts at the main gate, facing up the avenue.
+    const g = game.current;
+    const sp = world.places[world.spawn];
+    if (sp) {
+      g.pos = { x: sp.door[0], z: sp.door[1] + (world.gate ? 0 : 6) };
+      if (world.gate) {
+        g.heading = world.gate.ry;
+        g.cam.yaw = world.gate.ry + Math.PI;
+      }
+    }
+    g.route = [];
+    setHuntResult(null);
+    setHunt({ n: huntN, places: today, i: 0, start: Date.now() });
+    setPanel(null);
+    flash(fmt(ui.huntGo!, { name: placeNames[today[0]!] ?? "" }));
+  }, [world, today, huntN, flash, ui, placeNames]);
+  // Reaching the next place.
+  useEffect(() => {
+    if (!hunt || !near.place || near.place !== hunt.places[hunt.i]) return;
+    const i = hunt.i + 1;
+    ding(i === hunt.places.length);
+    if (i < hunt.places.length) {
+      setHunt({ ...hunt, i });
+      flash(fmt(ui.huntFound!, { name: placeNames[near.place] ?? "", n: i, of: hunt.places.length, next: placeNames[hunt.places[i]!] ?? "" }));
+      return;
+    }
+    const ms = Date.now() - hunt.start;
+    const best = saveHunt(hunt.n, ms);
+    setHunt(null);
+    setHuntResult({ n: hunt.n, ms, best, places: hunt.places });
+    setPanel("hunt");
+    game.current.anim.cheer = 1.6;
+    // Friends in your room see your time in the chat: a race.
+    partyRef.current?.say(fmt(ui.huntChat!, { n: hunt.n, t: fmtTime(ms) }));
+  }, [near.place, hunt, ding, flash, ui, placeNames]);
+  // The hunt clock on screen.
+  const [, setHuntTick] = useState(0);
+  useEffect(() => {
+    if (!hunt) return;
+    const id = window.setInterval(() => setHuntTick((n) => n + 1), 500);
+    return () => window.clearInterval(id);
+  }, [hunt]);
+  // Opened from a shared result (?hunt=…): show today's hunt.
+  const huntLink = useRef(false);
+  useEffect(() => {
+    if (huntLink.current || !world) return;
+    huntLink.current = true;
+    if (new URLSearchParams(window.location.search).has("hunt") && !startWithOutfit) setPanel("hunt");
+  }, [world, startWithOutfit]);
+  const huntShareText = (r: { n: number; ms: number; places: string[] }) =>
+    `${fmt(ui.huntShareText!, { n: r.n, t: fmtTime(r.ms), row: r.places.map((id) => KIND_EMOJI[kindOf(id)] ?? "📍").join("") })}\n${window.location.origin}${window.location.pathname}?hunt=${r.n}`;
 
   const held = carrying(script, progress);
   const talkingPerson = talk ? script.people.find((p) => p.id === talk.person) : undefined;
@@ -815,6 +909,10 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                     🗺️ <span className="hidden sm:inline">{ui.map}</span>
                     <span className="sr-only sm:hidden">{ui.map}</span>
                   </button>
+                  <button type="button" onClick={() => setPanel("hunt")} className={`${hudBtn} pointer-events-auto ${hunt ? "ring-2 ring-[#ffd166]" : ""}`}>
+                    🏁 <span className="hidden sm:inline">{ui.hunt}</span>
+                    <span className="sr-only sm:hidden">{ui.hunt}</span>
+                  </button>
                   <button type="button" onClick={() => setPanel("friends")} className={`${hudBtn} pointer-events-auto relative ${party ? "ring-2 ring-[#2e8b57]" : ""}`}>
                     👥 <span className="hidden sm:inline">{ui.friends}</span>
                     <span className="sr-only sm:hidden">{ui.friends}</span>
@@ -862,7 +960,16 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                 </div>
               )
             ) : null}
-            {timer && timerQuest && !talk ? (
+            {hunt && !talk ? (
+              <p role="timer" aria-live="off" className="pointer-events-none absolute top-32 left-3 inline-flex items-center gap-2 rounded-full bg-[#14101a]/85 py-1 pr-1 pl-4 text-sm font-bold text-white shadow-lg backdrop-blur sm:top-16 sm:left-1/2 sm:-translate-x-1/2">
+                <span>
+                  🏁 {hunt.i}/{hunt.places.length} · {fmtTime(Date.now() - hunt.start)}
+                </span>
+                <button type="button" onClick={() => setHunt(null)} className="pointer-events-auto inline-flex min-h-9 items-center rounded-full bg-white/15 px-3 text-xs hover:bg-white/25">
+                  {ui.huntQuit}
+                </button>
+              </p>
+            ) : timer && timerQuest && !talk ? (
               <p
                 role="timer"
                 aria-live="off"
@@ -1000,6 +1107,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               onJump={(id) => {
                 const p = world.places[id];
                 if (!p) return;
+                if (hunt) return flash(ui.huntNoJump!);
                 const [x, z] = tools.collider.resolve(p.door[0] + 2, p.door[1] + 2, 0.8);
                 game.current.pos = { x, z };
                 game.current.route = [];
@@ -1008,6 +1116,19 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               friends={party ? friendsXZ : undefined}
               friendList={party ? [...party.friends.values()].map((f) => ({ id: f.id, name: f.name })) : []}
               onJumpFriend={jumpToFriend}
+            />
+          ) : null}
+          {panel === "hunt" ? (
+            <HuntPanel
+              script={script}
+              n={huntN}
+              places={today.map((id) => ({ name: placeNames[id] ?? id, emoji: KIND_EMOJI[kindOf(id)] ?? "📍" }))}
+              best={bestFor(huntN)}
+              streak={streak()}
+              running={!!hunt}
+              result={huntResult ? { time: fmtTime(huntResult.ms), best: fmtTime(huntResult.best), row: huntResult.places.map((id) => KIND_EMOJI[kindOf(id)] ?? "📍").join(""), text: huntShareText(huntResult) } : null}
+              onStart={startHunt}
+              onClose={() => setPanel(null)}
             />
           ) : null}
           {panel === "friends" ? (

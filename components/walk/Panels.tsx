@@ -1073,3 +1073,81 @@ export function FriendsPanel({
     </Panel>
   );
 }
+
+// ─────────────────────────── The Daily Campus Hunt ───────────────────────────
+
+/** Today's five places, your best time and streak, the start button, and after a run: the result to share. */
+export function HuntPanel({
+  script,
+  n,
+  places,
+  best,
+  streak,
+  running,
+  result,
+  onStart,
+  onClose,
+}: {
+  script: WalkScript;
+  n: number;
+  places: { name: string; emoji: string }[];
+  best: number | null;
+  streak: number;
+  running: boolean;
+  result: { time: string; best: string; row: string; text: string } | null;
+  onStart: () => void;
+  onClose: () => void;
+}) {
+  const ui = script.ui;
+  const [shared, setShared] = useState(false);
+  const share = async (text: string) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+    } catch {
+      // Cancelled or not allowed: copy instead.
+    }
+    await navigator.clipboard?.writeText(text).catch(() => {});
+    setShared(true);
+    window.setTimeout(() => setShared(false), 2500);
+  };
+  const mmss = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, "0")}`;
+  return (
+    <Panel title={fmt(ui.huntTitle!, { n })} onClose={onClose} closeLabel={ui.close!}>
+      {result ? (
+        <div className="mb-5 rounded-2xl bg-[#ffd166] p-4 text-center text-black">
+          <p className="text-sm font-bold uppercase">{fmt(ui.huntDone!, { n })}</p>
+          <p className="grail-display text-5xl">{result.time}</p>
+          <p className="mt-1 text-2xl" aria-hidden="true">
+            {result.row}
+          </p>
+          <p className="mt-1 text-sm">{fmt(ui.huntBest!, { t: result.best })}</p>
+          <button type="button" onClick={() => void share(result.text)} className="mt-3 inline-flex min-h-12 items-center rounded-full bg-[#14101a] px-6 font-bold text-white">
+            {shared ? ui.huntCopied : ui.huntShare}
+          </button>
+        </div>
+      ) : null}
+      <p className="text-sm">{ui.huntIntro}</p>
+      <ol className="mt-3 flex flex-col gap-1">
+        {places.map((p, i) => (
+          <li key={p.name} className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold">
+            <span aria-hidden="true" className="text-lg">
+              {p.emoji}
+            </span>
+            <span className="text-white/60">{i + 1}.</span> {p.name}
+          </li>
+        ))}
+      </ol>
+      <p className="mt-3 flex flex-wrap gap-x-4 text-sm text-white/80">
+        {best !== null ? <span>{fmt(ui.huntBest!, { t: mmss(best) })}</span> : null}
+        {streak > 0 ? <span>{fmt(ui.huntStreak!, { n: streak })}</span> : null}
+      </p>
+      <button type="button" onClick={onStart} className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#ffd166] font-bold text-black">
+        {running ? ui.huntRestart : best !== null || result ? ui.huntAgain : ui.huntStart}
+      </button>
+      <p className="mt-3 text-xs text-white/60">{ui.huntNote}</p>
+    </Panel>
+  );
+}

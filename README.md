@@ -138,6 +138,10 @@ in the header, the homepage hero, or the campus and hostel pages.
   quests stay visible on campus: the dancer keeps dancing (and you dance too), the painting stands on its easel, the
   guitar plays, the telescope, the gaming desk, the trophy, the stalls and the new bins are all there. Students walk the
   roads too; they wave, answer your emotes and tell you where they're heading.
+- **Daily Campus Hunt.** Like a Wordle for the campus: every day everyone gets the same five SRM places to find,
+  starting from the main gate, against the clock. Share your time as a one-line result with an emoji per place
+  (🛍️🛏️🌳🏥💻) and a link that opens the same hunt; keep a daily streak; in a friends room your time posts to the
+  chat, so it becomes a race. No server: the places come from the date.
 - **Play with friends.** Start a room from 👥 Friends and share the link: everyone who opens it walks the same campus
   with you, in their own outfit and with a name tag. Chat (T), emote, talk by voice (louder the closer you stand), jump
   to a friend from the map, and do quests together: a step one of you does counts for everyone at that step. Browsers
