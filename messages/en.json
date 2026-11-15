@@ -1580,7 +1580,9 @@
       "left": "{name} left",
       "sharedStep": "🤝 {name} moved “{quest}” on for you too",
       "invited": "A friend invited you to play together (room {code}). Press Begin to join them.",
-      "p2pFail": "Couldn't connect to the room. Check your connection and try again."
+      "p2pFail": "Couldn't connect to the room. Check your connection and try again.",
+      "lightSunset": "Sunset",
+      "lightNight": "Night"
     },
     "kinds": {
       "arrival": "Getting here",

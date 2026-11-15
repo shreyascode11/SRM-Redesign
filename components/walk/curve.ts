@@ -35,6 +35,8 @@ type Opts = {
   color?: THREE.ColorRepresentation;
   vertexColors?: boolean;
   windows?: boolean;
+  /** Ponds: moving ripples and glints. */
+  water?: boolean;
   grass?: boolean;
   /** Road surfaces (geometry carries aLat across, aLen along, aW width): 1 asphalt · 2 painted kerb · 3 paver tiles. */
   surface?: 1 | 2 | 3;
@@ -67,7 +69,7 @@ export function toon(opts: Opts = {}): THREE.MeshToonMaterial {
   return m;
 }
 
-export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" | "sway" | "grass" | "surface"> = {}): T {
+export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" | "sway" | "grass" | "surface" | "water"> = {}): T {
   m.onBeforeCompile = (s) => {
     s.uniforms.uCurve = curve.uCurve;
     s.uniforms.uCenter = curve.uCenter;
@@ -146,6 +148,18 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
   float band = step(0.5, fract(vLen / 1.1));
   diffuseColor.rgb = mix(vec3(0.16, 0.17, 0.19), vec3(0.95, 0.8, 0.27), band);
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.15, 0.2), step(fract(vLen / 1.1), 0.03) * 0.6);`,
+      );
+    }
+    if (opts.water) {
+      // Ripples drifting across the pond and glints of sky (warm lamp light at night).
+      s.fragmentShader = s.fragmentShader.replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+  float wa = n21(vWorld.xz * 0.32 + vec2(uTime * 0.22, uTime * 0.15));
+  float wb = n21(vWorld.xz * 0.7 - vec2(uTime * 0.18, -uTime * 0.07));
+  diffuseColor.rgb *= 0.9 + 0.16 * wa;
+  float glint = smoothstep(0.74, 0.77, wa * 0.55 + wb * 0.45);
+  diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.93, 0.98, 1.0), vec3(1.0, 0.85, 0.55), uNight), glint * 0.65);`,
       );
     }
     if (opts.surface === 3) {

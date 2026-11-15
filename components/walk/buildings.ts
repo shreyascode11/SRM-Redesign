@@ -566,6 +566,8 @@ export function buildStreets(world: World) {
   const nearDoor = (x: number, z: number, d: number) => doors.some(([dx, dz]) => Math.hypot(dx - x, dz - z) < d);
   // Keep the arch gate's forecourt clear of lamp posts and shelters.
   const nearGate = (x: number, z: number) => !!world.gate && Math.hypot(world.gate.x - x, world.gate.z - z) < 22;
+  // Where each lamp head is, so the lamps can glow at night (WorldMeshes.tsx).
+  const lamps: [number, number, number][] = [];
   for (const r of world.roads) {
     if (r.f || r.w < 5) continue;
     let carry = 0;
@@ -589,6 +591,7 @@ export function buildStreets(world: World) {
         addGeo(b, CYL, place(x, 3, z, 0.07, 6, 0.07), pole);
         addGeo(b, BOX, place(x - nx * side * 0.6, 6, z - nz * side * 0.6, 1.3, 0.1, 0.12, Math.atan2(nx, nz) + Math.PI / 2), pole);
         addGeo(b, BOX, place(x - nx * side * 1.2, 5.88, z - nz * side * 1.2, 0.5, 0.14, 0.26, Math.atan2(nx, nz) + Math.PI / 2), lamp);
+        lamps.push([x - nx * side * 1.2, 5.78, z - nz * side * 1.2]);
       }
       carry = (carry + len) % 30;
     }
@@ -653,7 +656,9 @@ export function buildStreets(world: World) {
     addGeo(b, BOX, place(bx, 0.22, bz, 1.6, 0.44, 0.08, ry), pole);
     addGeo(b, CYL, place(x - tx * 3.6 + ox * 1.1, 0.45, z - tz * 3.6 + oz * 1.1, 0.26, 0.9, 0.26), col("#2f8f6b"));
   }
-  return toGeo(b);
+  const geo = toGeo(b);
+  geo.userData.lamps = lamps;
+  return geo;
 }
 
 function col(h: string) {

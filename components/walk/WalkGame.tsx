@@ -78,7 +78,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   const [quality, setQuality] = useState<"auto" | "low" | "high">("auto");
   const [touch, setTouch] = useState(false);
   const overlay = useMemo<Overlay>(() => ({ els: new Map(), anchors: new Map(), range: new Map() }), []);
-  const [light, setLight] = useState<"live" | "day">("day");
+  const [light, setLight] = useState<"live" | "day" | "sunset" | "night">("day");
   // Run toggle (the 🏃 button or R) and walking speed (pause menu), remembered between visits.
   const [running, setRunning] = useState(false);
   const [pace, setPace] = useState<number>(() => {
@@ -94,7 +94,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       localStorage.setItem("srm-walk-pace", String(pace));
     } catch {}
   }, [pace]);
-  const sky = useMemo(() => skyFor(light === "day" ? 12 : chennaiHour()), [light]);
+  const sky = useMemo(() => skyFor(light === "day" ? 12 : light === "sunset" ? 17.5 : light === "night" ? 21 : chennaiHour()), [light]);
   const base = script.locale === "en" ? "" : `/${script.locale}`;
   const placeNames = useMemo(() => Object.fromEntries(script.places.map((p) => [p.id, p.name])), [script.places]);
 

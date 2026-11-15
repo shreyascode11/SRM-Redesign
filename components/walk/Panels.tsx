@@ -685,8 +685,8 @@ export function PauseMenu({
   script: WalkScript;
   quality: "auto" | "low" | "high";
   onQuality: (q: "auto" | "low" | "high") => void;
-  light: "live" | "day";
-  onLight: (l: "live" | "day") => void;
+  light: "live" | "day" | "sunset" | "night";
+  onLight: (l: "live" | "day" | "sunset" | "night") => void;
   pace: number;
   onPace: (p: number) => void;
   onResume: () => void;
@@ -714,9 +714,9 @@ export function PauseMenu({
       <fieldset className="mt-5">
         <legend className="text-sm font-semibold text-white/70 uppercase">{ui.light}</legend>
         <div className="mt-2 flex flex-wrap gap-2">
-          {(["live", "day"] as const).map((l) => (
+          {(["live", "day", "sunset", "night"] as const).map((l) => (
             <button key={l} type="button" aria-pressed={light === l} onClick={() => onLight(l)} className={`${darkBtn} border border-white/20 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}>
-              {l === "live" ? ui.lightLive : ui.lightDay}
+              {l === "live" ? ui.lightLive : l === "day" ? ui.lightDay : l === "sunset" ? ui.lightSunset : ui.lightNight}
             </button>
           ))}
         </div>

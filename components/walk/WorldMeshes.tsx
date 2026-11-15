@@ -8,7 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import { chennaiSeconds } from "@/lib/walk/world";
 import { buildCampus, buildStreets, type Clock, isLandmark, type Sign } from "./buildings";
 import { buildLandmarks } from "./landmarks";
-import { toon } from "./curve";
+import { bend, curve, toon } from "./curve";
 
 /**
  * The world: ground, roads, ponds, buildings (buildings.ts), street furniture, signboards, trees and coconut palms.
@@ -303,6 +303,63 @@ function dialTexture() {
   dial.colorSpace = THREE.SRGBColorSpace;
   dial.anisotropy = 4;
   return dial;
+}
+
+/** Street lamps after dark: a warm bulb under each head and a pool of light on the road, fading in with the night. */
+function Lamps({ lamps }: { lamps: [number, number, number][] }) {
+  const bulbs = useRef<THREE.InstancedMesh>(null);
+  const pools = useRef<THREE.InstancedMesh>(null);
+  const mats = useMemo(() => {
+    const glow = (c: string, additive: boolean) =>
+      bend(
+        new THREE.MeshToonMaterial({
+          color: "#000000",
+          emissive: c,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          ...(additive ? { blending: THREE.AdditiveBlending } : {}),
+        }),
+      );
+    return { bulb: glow("#ffe2a8", false), pool: glow("#ffb85c", true) };
+  }, []);
+  const geos = useMemo(() => {
+    const disc = new THREE.CircleGeometry(3.6, 24);
+    disc.rotateX(-Math.PI / 2);
+    return { bulb: new THREE.SphereGeometry(0.22, 10, 6), disc };
+  }, []);
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    lamps.forEach(([x, y, z], i) => {
+      bulbs.current?.setMatrixAt(i, m.makeTranslation(x, y, z));
+      pools.current?.setMatrixAt(i, m.makeTranslation(x, 0.09, z));
+    });
+    for (const r of [bulbs, pools]) if (r.current) r.current.instanceMatrix.needsUpdate = true;
+  }, [lamps]);
+  useFrame(() => {
+    // Lamps come on from dusk; at full night the pools are brightest.
+    const n = curve.uNight.value;
+    mats.bulb.opacity = Math.min(1, n * 2.5);
+    mats.pool.opacity = Math.max(0, n - 0.15) * 0.32;
+    if (bulbs.current) bulbs.current.visible = n > 0.05;
+    if (pools.current) pools.current.visible = n > 0.2;
+  });
+  useEffect(
+    () => () => {
+      geos.bulb.dispose();
+      geos.disc.dispose();
+      mats.bulb.dispose();
+      mats.pool.dispose();
+    },
+    [geos, mats],
+  );
+  if (!lamps.length) return null;
+  return (
+    <>
+      <instancedMesh ref={bulbs} args={[geos.bulb, mats.bulb, lamps.length]} frustumCulled={false} userData={{ noInk: true }} />
+      <instancedMesh ref={pools} args={[geos.disc, mats.pool, lamps.length]} frustumCulled={false} renderOrder={2} userData={{ noInk: true }} />
+    </>
+  );
 }
 
 function ClockFaces({ clocks }: { clocks: Clock[] }) {
@@ -647,7 +704,7 @@ export function WorldMeshes({ world, highlight, names }: { world: World; highlig
     <group>
       <mesh geometry={statics.ground} material={toon({ color: "#7fb267", grass: true })} receiveShadow />
       {statics.green ? <mesh geometry={statics.green} material={toon({ color: "#6ea85a", grass: true })} receiveShadow /> : null}
-      {statics.water ? <mesh geometry={statics.water} material={toon({ color: "#5fb6c2" })} /> : null}
+      {statics.water ? <mesh geometry={statics.water} material={toon({ color: "#5fb6c2", water: true })} /> : null}
       {statics.edges ? <mesh geometry={statics.edges} material={toon({ color: "#c2bfb4" })} receiveShadow /> : null}
       {statics.roads ? <mesh geometry={statics.roads} material={toon({ color: "#6f7779", surface: 1 })} receiveShadow /> : null}
       {statics.kerbs ? <mesh geometry={statics.kerbs} material={toon({ color: "#ffffff", surface: 2 })} receiveShadow /> : null}
@@ -659,6 +716,7 @@ export function WorldMeshes({ world, highlight, names }: { world: World; highlig
       {statics.landmarks ? <mesh geometry={statics.landmarks} material={toon({ vertexColors: true })} castShadow receiveShadow /> : null}
       {statics.glass ? <mesh geometry={statics.glass} material={toon({ vertexColors: true })} receiveShadow /> : null}
       <mesh geometry={statics.streets} material={toon({ vertexColors: true })} castShadow receiveShadow />
+      <Lamps lamps={(statics.streets.userData.lamps ?? []) as [number, number, number][]} />
       <Signs signs={statics.signs} />
       {hiGeo ? <mesh geometry={hiGeo} material={toon({ color: "#ffd166", transparent: true, opacity: 0.45 })} userData={{ noInk: true }} /> : null}
       <instancedMesh ref={rainTrunks} args={[BRANCHED, undefined, kinds.rain.length]} material={toon({ color: "#7a5b45" })} castShadow />

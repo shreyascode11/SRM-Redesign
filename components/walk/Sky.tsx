@@ -50,6 +50,18 @@ void main() {
   // Ink rim around each cloud.
   float rim = smoothstep(0.545, 0.56, c) - smoothstep(0.56, 0.575, c);
   col = mix(col, uInk, rim * 0.35 * smoothstep(0.02, 0.18, vDir.y));
+  // The sun (where the scene's light comes from) with a soft halo, and the moon at night, opposite it.
+  vec3 sunDir = normalize(vec3(0.47, 0.42, 0.29));
+  float sd = max(dot(vDir, sunDir), 0.0);
+  float day = 1.0 - uNight;
+  col += day * (pow(sd, 48.0) * 0.3 * vec3(1.0, 0.86, 0.6) + pow(sd, 8.0) * 0.08 * vec3(1.0, 0.8, 0.55));
+  col = mix(col, vec3(1.0, 0.97, 0.86), day * smoothstep(0.99935, 0.9996, sd) * (1.0 - shape));
+  vec3 moonDir = normalize(vec3(-0.5, 0.48, -0.38));
+  float md = max(dot(vDir, moonDir), 0.0);
+  float disc = smoothstep(0.9989, 0.9992, md);
+  float crater = noise(vDir.xz * 900.0);
+  col = mix(col, vec3(0.94, 0.93, 0.86) * (0.88 + 0.12 * crater), uNight * disc);
+  col += uNight * pow(md, 90.0) * 0.18 * vec3(0.75, 0.8, 1.0);
   // Stars at night.
   float star = step(0.9985, hash(floor(vDir.xz * 420.0 + vDir.y * 13.0))) * uNight * smoothstep(0.1, 0.4, vDir.y);
   col += star * 0.8;
