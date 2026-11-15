@@ -928,8 +928,9 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               </div>
             ) : null}
             {nearPlace && !talk && !panel ? (
-              <div className="absolute inset-x-3 bottom-36 flex justify-center sm:hidden">
-                <PlaceCard place={nearPlace} ui={ui} />
+              // Phones: above the Talk button, the stick and the thumb buttons (they reach 196 px up), never on top of them.
+              <div className="absolute inset-x-3 flex sm:hidden" style={{ bottom: "calc(13rem + env(safe-area-inset-bottom))" }}>
+                <PlaceCard place={nearPlace} ui={ui} compact />
               </div>
             ) : null}
             {!talk && !panel && !nearPlace ? <p className="absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-xs font-semibold text-white/90 drop-shadow lg:block">{ui.keys}</p> : null}

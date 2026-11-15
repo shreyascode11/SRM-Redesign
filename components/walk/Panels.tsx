@@ -832,7 +832,29 @@ export function Joystick({ game, label }: { game: React.RefObject<Game>; label: 
   );
 }
 
-export function PlaceCard({ place, ui }: { place: WalkPlace; ui: Record<string, string> }) {
+export function PlaceCard({ place, ui, compact }: { place: WalkPlace; ui: Record<string, string>; compact?: boolean }) {
+  // Phones: one slim line (the whole pill opens the page), so it never covers the stick or the buttons.
+  if (compact) {
+    const inner = (
+      <>
+        <span aria-hidden="true">🏛️</span>
+        <span className="min-w-0 truncate">{place.name}</span>
+        {place.href ? (
+          <span className="shrink-0 rounded-full bg-[#14101a] px-2.5 py-1 text-xs text-white">
+            {ui.openPage} <span aria-hidden="true">›</span>
+          </span>
+        ) : null}
+      </>
+    );
+    const cls = "walk-card pointer-events-auto inline-flex min-h-11 max-w-full items-center gap-2 rounded-full bg-white py-1 pr-1.5 pl-3 text-sm font-bold text-black no-underline shadow-xl";
+    return place.href ? (
+      <a href={place.href} className={cls}>
+        {inner}
+      </a>
+    ) : (
+      <span className={`${cls} pr-4`}>{inner}</span>
+    );
+  }
   return (
     <div className="walk-card pointer-events-auto flex max-w-sm items-center gap-3 rounded-2xl bg-white p-2 pr-3 text-black shadow-xl">
       {place.photo ? (
