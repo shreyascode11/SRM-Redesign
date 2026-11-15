@@ -138,6 +138,9 @@ in the header, the homepage hero, or the campus and hostel pages.
   quests stay visible on campus: the dancer keeps dancing (and you dance too), the painting stands on its easel, the
   guitar plays, the telescope, the gaming desk, the trophy, the stalls and the new bins are all there. Students walk the
   roads too; they wave, answer your emotes and tell you where they're heading.
+- **Guided tour.** For visitors and parents who'd rather not play: "Take the guided tour" (or 🧭 in the game) walks
+  your student along real paths to ten stops, from the main gate to Potheri station, with a short card at each built
+  from SRM's own published information, and the building's page one tap away.
 - **Daily Campus Hunt.** Like a Wordle for the campus: every day everyone gets the same five SRM places to find,
   starting from the main gate, against the clock. Share your time as a one-line result with an emoji per place
   (🛍️🛏️🌳🏥💻) and a link that opens the same hunt; keep a daily streak; in a friends room your time posts to the

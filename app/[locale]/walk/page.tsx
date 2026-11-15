@@ -53,7 +53,7 @@ export default async function WalkPage({ params }: Params) {
       >
         <WalkLauncher
           script={script}
-          labels={{ begin: t("hero.begin"), outfitFirst: t("hero.outfitFirst"), textTour: t("hero.textTour"), lite: t("hero.lite"), noWebgl: t("hero.noWebgl") }}
+          labels={{ begin: t("hero.begin"), outfitFirst: t("hero.outfitFirst"), guided: t("hero.guided"), textTour: t("hero.textTour"), lite: t("hero.lite"), noWebgl: t("hero.noWebgl") }}
         />
         <Image
           src="/walk/cover-gate.jpg"

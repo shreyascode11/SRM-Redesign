@@ -12,6 +12,8 @@ import { type Npc, type Overlay, Scene, type Sky } from "./Scene";
 import { carrying, type Game, jump, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
 
 const noSub = () => () => {};
+/** The guided tour's stops, in walking order from the main gate. */
+const TOUR = ["gate", "university-building", "library", "clock-tower", "java", "tech-park", "auditorium", "paari", "hospital", "potheri"];
 const zero = () => 0;
 
 /** Light and sky: a painted teal day by default (anime style), or Chennai's real time of day. */
@@ -49,7 +51,7 @@ const tap = (fn: () => void) => ({
 
 const QUALITY_DPR = { auto: [1, 1.6], low: [0.7, 0.85], high: [1.5, 2] } as const;
 
-export default function WalkGame({ script, onExit, startWithOutfit }: { script: WalkScript; onExit: () => void; startWithOutfit: boolean }) {
+export default function WalkGame({ script, onExit, startWithOutfit, startTour = false }: { script: WalkScript; onExit: () => void; startWithOutfit: boolean; startTour?: boolean }) {
   const ui = script.ui;
   const [world, setWorld] = useState<World | null>(null);
   const [error, setError] = useState(false);
@@ -76,6 +78,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     } catch {}
   };
   const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish" | "friends" | "hunt" | "photo">(startWithOutfit ? "outfit" : null);
+  // Whether the guided tour is on (its state is further down; quest guidance steps aside meanwhile).
+  const [tourOn, setTourOn] = useState(false);
   // The 3D view's canvas, for photo mode.
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const getCanvas = useCallback(() => canvasRef.current, []);
@@ -191,8 +195,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   }, [world, tracked, progress, script.quests, npcs, hunt, placeNames, ui]);
   useEffect(() => {
     // No guide arrow or beacon in photos.
-    if (game.current) game.current.target = panel === "photo" ? null : (targetInfo?.xz ?? null);
-  }, [targetInfo, panel]);
+    if (game.current) game.current.target = panel === "photo" || tourOn ? null : (targetInfo?.xz ?? null);
+  }, [targetInfo, panel, tourOn]);
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
@@ -750,6 +754,8 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       }
     }
     g.route = [];
+    g.onArrive = null;
+    setTour(null);
     setHuntResult(null);
     setHunt({ n: huntN, places: today, i: 0, start: Date.now() });
     setPanel(null);
@@ -790,6 +796,77 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
   }, [world, startWithOutfit]);
   const huntShareText = (r: { n: number; ms: number; places: string[] }) =>
     `${fmt(ui.huntShareText!, { n: r.n, t: fmtTime(r.ms), row: r.places.map((id) => KIND_EMOJI[kindOf(id)] ?? "📍").join("") })}\n${window.location.origin}${window.location.pathname}?hunt=${r.n}`;
+
+  // ── The guided tour: the student walks (runs) the campus on autopilot, stopping at the main places ──
+  const [tour, setTour] = useState<null | { i: number; arrived: boolean }>(null);
+  const tourStops = useMemo(() => (world ? TOUR.filter((id) => world.places[id] && ui[`tour_${id}`]) : []), [world, ui]);
+  const goTour = useCallback(
+    (i: number, teleport: boolean) => {
+      const id = tourStops[i];
+      if (!world || !tools || !id) {
+        setTour(null);
+        return;
+      }
+      const pl = world.places[id]!;
+      // Stand 8 m out from the door, facing the building.
+      const b = pl.b !== undefined ? world.buildings[pl.b] : undefined;
+      const c = b ? b.p.reduce((s, q) => [s[0] + q[0] / b.p.length, s[1] + q[1] / b.p.length], [0, 0]) : [pl.x, pl.z - 1];
+      const ox = pl.door[0] - c[0]!;
+      const oz = pl.door[1] - c[1]!;
+      const ol = Math.hypot(ox, oz) || 1;
+      const [x, z] = tools.collider.resolve(pl.door[0] + (ox / ol) * 8, pl.door[1] + (oz / ol) * 8, 0.8);
+      const g = game.current;
+      const arrive = () => {
+        setTour({ i, arrived: true });
+        const yaw = Math.atan2(ox, oz);
+        g.heading = yaw + Math.PI;
+        g.cam.yaw = yaw;
+      };
+      setTour({ i, arrived: false });
+      if (teleport) {
+        g.pos = { x, z };
+        g.route = [];
+        g.onArrive = null;
+        arrive();
+      } else {
+        g.route = tools.paths.route([g.pos.x, g.pos.z], [x, z]);
+        g.onArrive = arrive;
+        if (!g.route.length) arrive();
+      }
+    },
+    [world, tools, tourStops],
+  );
+  const beginTour = useCallback(() => {
+    if (!tourStops.length) return;
+    setPanel(null);
+    setHunt(null);
+    setRunning(true);
+    goTour(0, true);
+  }, [tourStops, goTour]);
+  const tourNext = useCallback(() => {
+    if (!tour) return;
+    if (!tour.arrived) return goTour(tour.i, true); // skip the walk
+    if (tour.i + 1 >= tourStops.length) {
+      setTour(null);
+      flash(ui.tourDone!);
+      return;
+    }
+    goTour(tour.i + 1, false);
+  }, [tour, tourStops, goTour, flash, ui]);
+  const endTour = useCallback(() => {
+    game.current.route = [];
+    game.current.onArrive = null;
+    setTour(null);
+  }, []);
+  // Started from the page's "Take the guided tour".
+  const tourStarted = useRef(false);
+  useEffect(() => {
+    if (!startTour || tourStarted.current || !tourStops.length) return;
+    tourStarted.current = true;
+    beginTour();
+  }, [startTour, tourStops, beginTour]);
+  const tourPlace = tour ? script.places.find((p) => p.id === tourStops[tour.i]) : undefined;
+  useEffect(() => setTourOn(!!tour), [tour]);
 
   const held = carrying(script, progress);
   const talkingPerson = talk ? script.people.find((p) => p.id === talk.person) : undefined;
@@ -916,6 +993,10 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                     🗺️ <span className="hidden sm:inline">{ui.map}</span>
                     <span className="sr-only sm:hidden">{ui.map}</span>
                   </button>
+                  <button type="button" onClick={tour ? endTour : beginTour} className={`${hudBtn} pointer-events-auto ${tour ? "ring-2 ring-[#ffd166]" : ""}`}>
+                    🧭 <span className="hidden sm:inline">{ui.tour}</span>
+                    <span className="sr-only sm:hidden">{ui.tour}</span>
+                  </button>
                   <button type="button" onClick={() => setPanel("hunt")} className={`${hudBtn} pointer-events-auto ${hunt ? "ring-2 ring-[#ffd166]" : ""}`}>
                     🏁 <span className="hidden sm:inline">{ui.hunt}</span>
                     <span className="sr-only sm:hidden">{ui.hunt}</span>
@@ -940,7 +1021,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
             </div>
 
             {/* Next stop and what you're carrying. It can be folded into a small pill, so it never hides the game. */}
-            {targetInfo && !talk ? (
+            {targetInfo && !talk && !tourOn ? (
               bannerHidden ? (
                 <button
                   type="button"
@@ -992,8 +1073,38 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               </p>
             ) : null}
 
+            {/* The guided tour's card, in place of the controls. */}
+            {tour && tourPlace && !talk && !panel ? (
+              <section
+                aria-label={ui.tourTitle}
+                className="pointer-events-auto absolute inset-x-3 bottom-3 mx-auto max-w-xl rounded-2xl bg-[#14101a]/90 p-4 text-white shadow-2xl backdrop-blur-md sm:bottom-4"
+                style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+              >
+                <p className="text-xs font-semibold text-[#ffd166] uppercase">
+                  🧭 {ui.tourTitle} · {fmt(ui.tourStep!, { n: tour.i + 1, of: tourStops.length })}
+                </p>
+                <h2 className="mt-1 text-xl font-bold">{tourPlace.name}</h2>
+                <p aria-live="polite" className="mt-1 text-sm text-white/85">
+                  {tour.arrived ? ui[`tour_${tourPlace.id}`] : fmt(ui.tourWalking!, { name: tourPlace.name })}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" {...tap(tourNext)} className="walk-tap inline-flex min-h-11 items-center rounded-full bg-[#ffd166] px-5 font-bold text-black">
+                    {tour.arrived ? (tour.i + 1 >= tourStops.length ? ui.tourFinish : ui.tourNext) : ui.tourSkip} ▸
+                  </button>
+                  {tour.arrived && tourPlace.href ? (
+                    <a href={tourPlace.href} className="inline-flex min-h-11 items-center rounded-full border border-white/25 px-4 text-sm font-semibold text-white no-underline">
+                      {ui.openPage}
+                    </a>
+                  ) : null}
+                  <button type="button" {...tap(endTour)} className="walk-tap ml-auto inline-flex min-h-11 items-center rounded-full border border-white/25 px-4 text-sm font-semibold">
+                    {ui.tourEnd}
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
             {/* Bottom: place card, action buttons */}
-            {!talk && !panel ? (
+            {!talk && !panel && !tour ? (
               <div className="absolute inset-x-3 bottom-3 flex items-end justify-end gap-2 sm:bottom-4" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
                 {nearPlace ? (
                   <div className="mr-auto hidden sm:block">
@@ -1044,7 +1155,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                 </div>
               </div>
             ) : null}
-            {nearPlace && !talk && !panel ? (
+            {nearPlace && !talk && !panel && !tour ? (
               // Phones: above the Talk button, the stick and the thumb buttons (they reach 196 px up), never on top of them.
               <div className="absolute inset-x-3 flex sm:hidden" style={{ bottom: "calc(13rem + env(safe-area-inset-bottom))" }}>
                 <PlaceCard place={nearPlace} ui={ui} compact />
@@ -1053,7 +1164,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
             {!talk && !panel && !nearPlace ? <p className="absolute bottom-3 left-1/2 hidden -translate-x-1/2 text-xs font-semibold text-white/90 drop-shadow lg:block">{ui.keys}</p> : null}
           </div>
 
-          {touch && !talk && !panel ? <Joystick game={game} label={ui.touch!} /> : null}
+          {touch && !talk && !panel && !tour ? <Joystick game={game} label={ui.touch!} /> : null}
 
           {talk && talkingPerson ? (
             <Dialogue

@@ -18,10 +18,10 @@ const webgl = () => {
 };
 
 /** The opening screen's buttons, and the full-screen game once started. Lite Mode and no-WebGL get the tour instead. */
-export function WalkLauncher({ script, labels }: { script: WalkScript; labels: { begin: string; outfitFirst: string; textTour: string; lite: string; noWebgl: string } }) {
+export function WalkLauncher({ script, labels }: { script: WalkScript; labels: { begin: string; outfitFirst: string; guided: string; textTour: string; lite: string; noWebgl: string } }) {
   const { lite } = useLiteMode();
   const [gl, setGl] = useState(true);
-  const [run, setRun] = useState<null | { outfit: boolean }>(null);
+  const [run, setRun] = useState<null | { outfit: boolean; tour?: boolean }>(null);
   useEffect(() => setGl(webgl()), []);
   // Opened from a friend's invite link: say so; the game joins their room once it starts.
   const [room, setRoom] = useState<string | null>(null);
@@ -59,11 +59,20 @@ export function WalkLauncher({ script, labels }: { script: WalkScript; labels: {
         >
           👕 {labels.outfitFirst}
         </button>
+        <button
+          type="button"
+          onPointerEnter={warm}
+          onFocus={warm}
+          onClick={() => setRun({ outfit: false, tour: true })}
+          className="inline-flex min-h-12 items-center rounded-full border border-[var(--line)] px-6 font-semibold text-[var(--fg)] hover:border-[var(--fg)]"
+        >
+          🧭 {labels.guided}
+        </button>
         <a href="#walk-tour" className="inline-flex min-h-12 items-center px-2 font-semibold text-[var(--fg)] underline underline-offset-4">
           {labels.textTour}
         </a>
       </div>
-      {run ? <WalkGame script={script} startWithOutfit={run.outfit} onExit={() => setRun(null)} /> : null}
+      {run ? <WalkGame script={script} startWithOutfit={run.outfit} startTour={!!run.tour} onExit={() => setRun(null)} /> : null}
     </>
   );
 }

@@ -1466,7 +1466,8 @@
       "noWebgl": "This device can't show 3D. Everything in the game is in the tour below.",
       "lite": "Lite Mode is on, so the 3D walk is off. Everything in it is in the tour below.",
       "time": "About 10 minutes · keyboard, mouse or touch",
-      "credit": "Map data © OpenStreetMap contributors (ODbL). Building heights are approximate. The quests are a game; what people tell you is SRM's own published information."
+      "credit": "Map data © OpenStreetMap contributors (ODbL). Building heights are approximate. The quests are a game; what people tell you is SRM's own published information.",
+      "guided": "Take the guided tour"
     },
     "ui": {
       "exit": "Exit",
@@ -1621,7 +1622,26 @@
       "filterMono": "B&W",
       "filterRetro": "Retro",
       "postcardLine": "SRM Kattankulathur · {date}",
-      "postcardCampus": "SRM Kattankulathur campus"
+      "postcardCampus": "SRM Kattankulathur campus",
+      "tour": "Tour",
+      "tourTitle": "Guided tour",
+      "tourStep": "{n} of {of}",
+      "tourWalking": "Walking to {name}…",
+      "tourSkip": "Skip ahead",
+      "tourNext": "Next stop",
+      "tourFinish": "Finish",
+      "tourEnd": "End tour",
+      "tourDone": "That's the tour! Keep exploring, try today's Daily Hunt, or start a quest.",
+      "tour_gate": "The main gate, where every walk begins. Potheri railway station is a short walk along the main road.",
+      "tour_university-building": "SRM University Building, where the game's admissions counsellor waits. Its canteen is on the ground floor, with small outlets on the 5th and 8th floors.",
+      "tour_library": "SRM Library, a few steps from the University Building.",
+      "tour_clock-tower": "The clock tower on its roundabout: the campus's best-known landmark. Its clocks here show the real time in Chennai.",
+      "tour_java": "The food court by the clock tower: about 20 stalls, from shawarma and biryani to Subway.",
+      "tour_tech-park": "SRM Tech Park: the yellow and blue tower with pink bands, one of the tallest buildings on campus. The orange tower beside it is Tech Park 2.",
+      "tour_auditorium": "Dr. T. P. Ganesan Auditorium, where SRM holds its big events, with two mini halls under its front ramps.",
+      "tour_paari": "The hostels. Every hostel has its own mess, with North and South Indian menus, and a warden on every block. Girls' hostels have round-the-clock CCTV, security guards and biometric attendance.",
+      "tour_hospital": "SRM's hospital. Students use it in working hours and its casualty department after hours, and an ambulance is on campus 24 hours.",
+      "tour_potheri": "Potheri railway station, on the Tambaram–Chengalpattu suburban line, right beside the campus: the easy way to arrive by train."
     },
     "kinds": {
       "arrival": "Getting here",
