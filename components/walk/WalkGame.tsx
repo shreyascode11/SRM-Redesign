@@ -7,6 +7,7 @@ import { chennaiHour, Collider, Paths, type World, type XZ } from "@/lib/walk/wo
 import { Dialogue, EmoteWheel, Finish, fmt, FriendsPanel, hudBtn, HuntPanel, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
 import { bestFor, fmtTime, huntNumber, huntPlaces, KIND_EMOJI, saveHunt, streak } from "./hunt";
 import { cleanRoomCode, newRoomCode, Party, type Pose } from "./party";
+import { PhotoMode } from "./Photo";
 import { type Npc, type Overlay, Scene, type Sky } from "./Scene";
 import { carrying, type Game, jump, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
 
@@ -74,7 +75,10 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       sessionStorage.setItem("srm-walk-banner", hidden ? "hidden" : "shown");
     } catch {}
   };
-  const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish" | "friends" | "hunt">(startWithOutfit ? "outfit" : null);
+  const [panel, setPanel] = useState<null | "quests" | "map" | "outfit" | "emote" | "pause" | "finish" | "friends" | "hunt" | "photo">(startWithOutfit ? "outfit" : null);
+  // The 3D view's canvas, for photo mode.
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const getCanvas = useCallback(() => canvasRef.current, []);
   // The Daily Hunt in progress (hunt.ts): which hunt, its five places, how many are found, and when it started.
   const [hunt, setHunt] = useState<null | { n: number; places: string[]; i: number; start: number }>(null);
   const [huntResult, setHuntResult] = useState<null | { n: number; ms: number; best: number; places: string[] }>(null);
@@ -186,8 +190,9 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
     return null;
   }, [world, tracked, progress, script.quests, npcs, hunt, placeNames, ui]);
   useEffect(() => {
-    if (game.current) game.current.target = targetInfo?.xz ?? null;
-  }, [targetInfo]);
+    // No guide arrow or beacon in photos.
+    if (game.current) game.current.target = panel === "photo" ? null : (targetInfo?.xz ?? null);
+  }, [targetInfo, panel]);
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
@@ -466,6 +471,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       else if (k === "j") setPanel("quests");
       else if (k === "c") setPanel("outfit");
       else if (k === "f") setPanel("friends");
+      else if (k === "p") setPanel("photo");
       else if (k === "t") {
         // T: talk to your friends (opens the chat).
         e.preventDefault();
@@ -815,12 +821,13 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
       ) : (
         <>
           <Canvas
+            ref={canvasRef}
             aria-hidden="true"
             dpr={QUALITY_DPR[quality] as unknown as [number, number]}
             camera={{ fov: 56, near: 0.3, far: 1400, position: [0, 30, 30] }}
             flat
             shadows={quality !== "low" ? "percentage" : false}
-            gl={{ antialias: quality !== "low", powerPreference: "high-performance" }}
+            gl={{ antialias: quality !== "low", powerPreference: "high-performance", preserveDrawingBuffer: true }}
             frameloop={panel === "pause" || panel === "finish" ? "demand" : "always"}
             className="!absolute inset-0"
             style={{ touchAction: "none" }}
@@ -849,7 +856,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
           </Canvas>
 
           {/* Floating labels over the 3D world (positioned each frame by the scene). */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className={`pointer-events-none absolute inset-0 overflow-hidden ${panel === "photo" ? "hidden" : ""}`}>
             {script.places.map((p) =>
               world.places[p.id]?.b !== undefined ? (
                 <span key={p.id} ref={reg(`place:${p.id}`)} className="walk-label absolute top-0 left-0 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold whitespace-nowrap text-black shadow" style={{ visibility: "hidden" }}>
@@ -887,7 +894,7 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
           </div>
 
           {/* ── HUD ── */}
-          <div className="pointer-events-none absolute inset-0 z-20 p-3 sm:p-4" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
+          <div className={`pointer-events-none absolute inset-0 z-20 p-3 sm:p-4 ${panel === "photo" ? "hidden" : ""}`} style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setPanel("pause")} className={`${hudBtn} pointer-events-auto`}>
@@ -1030,6 +1037,9 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
                     <button type="button" {...tap(() => setPanel("outfit"))} className={`${hudBtn} walk-tap pointer-events-auto size-12`}>
                       👕<span className="sr-only">{ui.outfit}</span>
                     </button>
+                    <button type="button" {...tap(() => setPanel("photo"))} className={`${hudBtn} walk-tap pointer-events-auto size-12`}>
+                      📷<span className="sr-only">{ui.photo}</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1116,6 +1126,20 @@ export default function WalkGame({ script, onExit, startWithOutfit }: { script: 
               friends={party ? friendsXZ : undefined}
               friendList={party ? [...party.friends.values()].map((f) => ({ id: f.id, name: f.name })) : []}
               onJumpFriend={jumpToFriend}
+            />
+          ) : null}
+          {panel === "photo" ? (
+            <PhotoMode
+              canvas={getCanvas}
+              ui={ui}
+              place={nearPlace?.name ?? ui.postcardCampus!}
+              onPose={(p) => {
+                const a = game.current.anim;
+                if (p === "wave") a.wave = 1.8;
+                else if (p === "cheer") a.cheer = 1.8;
+                else a.dance = 6;
+              }}
+              onClose={() => setPanel(null)}
             />
           ) : null}
           {panel === "hunt" ? (
