@@ -9,7 +9,9 @@
 // To refresh, run this Overpass query (overpass-turbo.eu or any mirror) and pass the JSON in (several files are merged):
 //   [out:json][timeout:90];(way["building"](12.8155,80.0360,12.8275,80.0510);way["highway"](12.8155,80.0360,12.8275,80.0510);
 //   way["natural"="water"](12.8155,80.0360,12.8275,80.0510);way["leisure"~"park|pitch|garden"](12.8155,80.0360,12.8275,80.0510);
-//   node["name"](12.8155,80.0360,12.8275,80.0510););out geom tags center;
+//   way["leisure"](…);way["amenity"="parking"](…);node["name"](12.8155,80.0360,12.8275,80.0510););out geom tags center;
+// (or everything in the box from the OSM API: /api/0.6/map.json?bbox=80.0360,12.8155,80.0510,12.8275, with each way's
+// nodes resolved into "geometry"; the script only reads what it knows)
 // and, for the railway past Potheri (a wider box, so the line runs out to the horizon), in a second file:
 //   [out:json][timeout:60];(way["railway"="rail"](12.805,80.028,12.835,80.048);node["railway"~"station|halt"](12.805,80.028,12.835,80.048););out geom tags;
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -100,6 +102,9 @@ const roads = [];
 const roundabouts = new Map(); // OSM way id → { p, w }, for landmarks on traffic islands (content/walk.json "roundabout")
 const water = [];
 const green = [];
+const parking = [];
+const footbridges = [];
+const steps = [];
 for (const e of elements) {
   const t = e.tags ?? {};
   if (e.type === "node" || (!e.geometry && e.center)) {
@@ -107,7 +112,9 @@ for (const e of elements) {
     if (t.name && p && inBox(p, PAD)) osmNames.push({ name: t.name, x: toXZ(p)[0], z: toXZ(p)[1], tags: t, ll: [p.lat, p.lon] });
     continue;
   }
-  if (!e.geometry || !e.geometry.some((p) => inBox(p))) continue;
+  // Bridges and steps just outside the box still count (Potheri station's footbridge stands a few metres beyond it).
+  const edgePad = t.bridge || t.highway === "steps" ? PAD : 0;
+  if (!e.geometry || !e.geometry.some((p) => inBox(p, edgePad))) continue;
   if (t.building) {
     const pts = closeRing(e.geometry.map(toXZ));
     if (pts.length < 3) continue;
@@ -129,6 +136,11 @@ for (const e of elements) {
       const c = pts.reduce((s, q) => [s[0] + q[0] / pts.length, s[1] + q[1] / pts.length], [0, 0]);
       osmNames.push({ name: t.name, x: c[0], z: c[1], tags: t, building: buildings.length - 1 });
     }
+  } else if (t.highway === "footway" && t.bridge) {
+    // A foot overbridge (the one over the tracks at Potheri): drawn raised, not as a path on the ground.
+    footbridges.push({ p: e.geometry.map(toXZ) });
+  } else if (t.highway === "steps") {
+    steps.push({ p: e.geometry.map(toXZ), ...(t.name ? { n: t.name } : {}) });
   } else if (t.highway) {
     const foot = ["footway", "path", "steps", "pedestrian", "cycleway", "corridor"].includes(t.highway);
     const real = foot ? 2.5 : ({ trunk: 16, trunk_link: 8, primary: 12, secondary: 10, tertiary: 8, residential: 6, unclassified: 6, living_street: 5, service: 4.5, road: 6 }[t.highway] ?? 4);
@@ -138,9 +150,14 @@ for (const e of elements) {
   } else if (t.natural === "water") {
     const pts = closeRing(e.geometry.map(toXZ));
     if (pts.length > 2) water.push({ p: pts });
-  } else if (t.leisure || t.landuse) {
+  } else if (t.amenity === "parking") {
     const pts = closeRing(e.geometry.map(toXZ));
-    if (pts.length > 2) green.push({ p: pts });
+    if (pts.length > 2) parking.push({ p: pts });
+  } else if (["park", "garden", "pitch", "playground"].includes(t.leisure)) {
+    // s: what it is, so the game can draw it: a park lawn, a tennis or basketball court, or a play area.
+    const pts = closeRing(e.geometry.map(toXZ));
+    const s = t.leisure === "pitch" ? (t.sport ?? "pitch").split(";")[0] : t.leisure === "playground" ? "play" : "park";
+    if (pts.length > 2) green.push({ p: pts, s });
   }
 }
 
@@ -384,6 +401,9 @@ for (let tries = 0; trees.length < 850 && tries < 40000; tries++) {
   const x = bounds.minX + rand() * (bounds.maxX - bounds.minX);
   const z = bounds.minZ + rand() * (bounds.maxZ - bounds.minZ);
   if (buildings.some((b) => inside(x, z, b.p)) || water.some((w) => inside(x, z, w.p)) || nearRoad(x, z)) continue;
+  // No trees on courts, play areas or car parks (parks keep theirs).
+  const onCourt = (g) => inside(x, z, g.p) || g.p.some((q) => Math.hypot(q[0] - x, q[1] - z) < 5);
+  if (green.some((g) => g.s !== "park" && onCourt(g)) || parking.some(onCourt)) continue;
   if (Object.values(places).some((p) => Math.hypot(p.door[0] - x, p.door[1] - z) < 7)) continue;
   trees.push([r(x), r(z), Math.round((0.7 + rand() * 0.8) * 10) / 10]);
 }
@@ -437,7 +457,15 @@ if (rail) {
   for (let i = trees.length - 1; i >= 0; i--) if (near(trees[i]) < 18) trees.splice(i, 1);
 }
 
-const out = { origin: [LAT0, LON0], scale: SCALE, bounds, spawn: walk.spawn, buildings, roads, water, green, trees, stops, places, ...(gate ? { gate } : {}), ...(rail ? { rail } : {}) };
+// The same area mapped twice (OSM has a few duplicates): keep one.
+const dedupe = (list) => {
+  const seen = new Set();
+  return list.filter((g) => {
+    const k = g.p.map((q) => q.join(",")).sort().join(";");
+    return seen.has(k) ? false : (seen.add(k), true);
+  });
+};
+const out = { origin: [LAT0, LON0], scale: SCALE, bounds, spawn: walk.spawn, buildings, roads, water, green: dedupe(green), trees, stops, places, ...(gate ? { gate } : {}), ...(rail ? { rail } : {}), parking: dedupe(parking), footbridges, steps };
 mkdirSync(new URL("../public/walk/", import.meta.url), { recursive: true });
 writeFileSync(new URL("../public/walk/ktr-world.json", import.meta.url), JSON.stringify(out));
 console.log(

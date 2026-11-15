@@ -304,8 +304,14 @@ export function Railway({ world, game, onTrain }: { world: World; game: React.Re
     // Canopy: posts down the middle and a roof, over the middle of the platform.
     const posts: { x: number; y: number; z: number; yaw: number }[] = [];
     const roofs: { x: number; y: number; z: number; yaw: number }[] = [];
+    // The canopy stops short of the footbridge and its stairs.
+    const obstacles = [...(world.footbridges ?? []), ...(world.steps ?? [])].flatMap((o) => {
+      const [a, c] = [o.p[0]!, o.p.at(-1)!];
+      return [0, 0.25, 0.5, 0.75, 1].map((t) => [a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t] as const);
+    });
     for (let s = station.s - 27; s <= station.s + 27; s += 7.7) {
       const p = at(L, s, platformMid);
+      if (obstacles.some(([ox, oz]) => Math.hypot(ox - p.x, oz - p.z) < 7.5)) continue;
       posts.push({ x: p.x, y: PLATFORM.h + 1.8, z: p.z, yaw: 0 });
       roofs.push({ x: p.x, y: PLATFORM.h + 3.75, z: p.z, yaw: yawOf(p.tx, p.tz) });
     }
@@ -343,7 +349,7 @@ export function Railway({ world, game, onTrain }: { world: World; game: React.Re
       if ((o as THREE.Mesh).isMesh && !(o as THREE.InstancedMesh).isInstancedMesh && !o.userData.noInk) o.castShadow = true;
     });
     return g;
-  }, [L, offs, n, station, platformMid, rail.station.name, rail.station.ref]);
+  }, [L, offs, n, station, platformMid, rail.station.name, rail.station.ref, world.footbridges, world.steps]);
   useEffect(() => () => statics.traverse((o) => (o as THREE.Mesh).geometry?.dispose()), [statics]);
 
   // ── The train ──

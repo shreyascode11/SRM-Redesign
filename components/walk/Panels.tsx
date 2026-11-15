@@ -329,6 +329,15 @@ function drawMap(
   ctx.fillRect(0, 0, w, h);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  // Parks, courts and car parks.
+  const area = (p: XZ[], colour: string) => {
+    ctx.fillStyle = colour;
+    ctx.beginPath();
+    p.forEach(([x, z], i) => (i ? ctx.lineTo(sx(x), sz(z)) : ctx.moveTo(sx(x), sz(z))));
+    ctx.fill();
+  };
+  for (const g of world.green) area(g.p, g.s === "tennis" ? "#3b77b3" : g.s === "basketball" ? "#b9623c" : g.s === "play" ? "#d3ad80" : "#9fce7f");
+  for (const g of world.parking ?? []) area(g.p, "#a3a6ad");
   // The railway: a dark band with white ties, like a map's railway line.
   if (world.rail) {
     const line = () => {
