@@ -4,6 +4,9 @@ import { HeroSearch } from "@/components/hero/HeroSearch";
 import { CampusExplorer } from "@/components/map/CampusExplorer";
 import { Photo } from "@/components/ui/Photo";
 import questsData from "@/content/quests.json";
+import walkContent from "@/content/walk.json";
+import { TodayHunt } from "@/components/walk/TodayHunt";
+import walkWorld from "@/public/walk/ktr-world.json";
 import { getContent } from "@/lib/content";
 import { Link } from "@/lib/i18n";
 import { STAT_KOLAM } from "@/lib/kolam";
@@ -445,6 +448,14 @@ export async function GrailHome() {
               <Link href="/walk" className="grail-cta mt-6 w-fit">
                 {walk("promo.cta")} ▸
               </Link>
+              {/* Today's Daily Campus Hunt: the same five places for everyone today. */}
+              <TodayHunt
+                places={walkContent.places
+                  .filter((p) => p.id in walkWorld.places)
+                  .map((p) => ({ id: p.id, name: p.name, kind: p.kind, door: (walkWorld.places as unknown as Record<string, { door: [number, number] }>)[p.id]!.door }))}
+                gate={(walkWorld.places as unknown as Record<string, { door: [number, number] }>)[walkWorld.spawn]?.door ?? [0, 0]}
+                labels={{ kicker: walk.raw("promo.huntKicker") as string, text: walk("promo.huntText"), cta: walk("promo.huntCta"), streak: walk.raw("ui.huntStreak") as string, best: walk.raw("ui.huntBest") as string }}
+              />
             </div>
           </div>
         </div>

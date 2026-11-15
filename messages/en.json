@@ -1641,7 +1641,8 @@
       "tour_auditorium": "Dr. T. P. Ganesan Auditorium, where SRM holds its big events, with two mini halls under its front ramps.",
       "tour_paari": "The hostels. Every hostel has its own mess, with North and South Indian menus, and a warden on every block. Girls' hostels have round-the-clock CCTV, security guards and biometric attendance.",
       "tour_hospital": "SRM's hospital. Students use it in working hours and its casualty department after hours, and an ambulance is on campus 24 hours.",
-      "tour_potheri": "Potheri railway station, on the Tambaram–Chengalpattu suburban line, right beside the campus: the easy way to arrive by train."
+      "tour_potheri": "Potheri railway station, on the Tambaram–Chengalpattu suburban line, right beside the campus: the easy way to arrive by train.",
+      "huntInvite": "Today's Daily Campus Hunt is waiting. Press Begin to see the five places and start from the main gate."
     },
     "kinds": {
       "arrival": "Getting here",
@@ -2312,7 +2313,10 @@
       "cta": "Start walking",
       "hostel": "Walk to your hostel in 3D",
       "heroCta": "Walk the campus in 3D",
-      "imageAlt": "A student at the SRM arch gate in Walk SRM, the 3D campus game"
+      "imageAlt": "A student at the SRM arch gate in Walk SRM, the 3D campus game",
+      "huntKicker": "Today's Daily Campus Hunt #{n}",
+      "huntText": "The same five places for everyone today. Start at the main gate and find them all as fast as you can.",
+      "huntCta": "Play today's hunt"
     }
   }
 }

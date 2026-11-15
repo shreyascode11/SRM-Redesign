@@ -25,7 +25,12 @@ export function WalkLauncher({ script, labels }: { script: WalkScript; labels: {
   useEffect(() => setGl(webgl()), []);
   // Opened from a friend's invite link: say so; the game joins their room once it starts.
   const [room, setRoom] = useState<string | null>(null);
-  useEffect(() => setRoom(new URLSearchParams(window.location.search).get("room")), []);
+  const [hunt, setHunt] = useState(false);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    setRoom(q.get("room"));
+    setHunt(q.has("hunt"));
+  }, []);
   // Warm the game chunk on hover/focus so "Begin" feels instant.
   const warm = () => void import("./WalkGame");
 
@@ -41,6 +46,9 @@ export function WalkLauncher({ script, labels }: { script: WalkScript; labels: {
 
   return (
     <>
+      {hunt && !room && script.ui.huntInvite ? (
+        <p className="mt-6 max-w-xl rounded-2xl border border-[#ffd166] bg-[#ffd166]/15 p-4 font-semibold text-[var(--fg)]">🏁 {script.ui.huntInvite}</p>
+      ) : null}
       {room && script.ui.invited ? (
         <p className="mt-6 max-w-xl rounded-2xl border border-[#2e8b57] bg-[#2e8b57]/15 p-4 font-semibold text-[var(--fg)]">
           👥 {script.ui.invited.replace("{code}", room.toUpperCase().slice(0, 12))}
