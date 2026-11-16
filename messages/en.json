@@ -1643,7 +1643,10 @@
       "tour_hospital": "SRM's hospital. Students use it in working hours and its casualty department after hours, and an ambulance is on campus 24 hours.",
       "tour_potheri": "Potheri railway station, on the Tambaram–Chengalpattu suburban line, right beside the campus: the easy way to arrive by train.",
       "huntInvite": "Today's Daily Campus Hunt is waiting. Press Begin to see the five places and start from the main gate.",
-      "goal": "⚽ GOAL! Blue {a} – {b} Gold"
+      "goal": "⚽ GOAL! Blue {a} – {b} Gold",
+      "mapSearch": "Find a place…",
+      "mapHint": "Walk there follows the paths; Jump there takes you straight to it.",
+      "mapNone": "No place by that name."
     },
     "kinds": {
       "arrival": "Getting here",
