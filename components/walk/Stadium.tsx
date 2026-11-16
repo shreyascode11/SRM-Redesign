@@ -1,12 +1,13 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { World, XZ } from "@/lib/walk/world";
 import { addGeo, newBuf, toGeo } from "./buildings";
 import { bend, curve, toon } from "./curve";
 import { obb } from "./Grounds";
+import type { Game } from "./state";
 
 /**
  * The sports ground beside Tech Park: a football pitch with its markings, ringed by a five-lane running track.
@@ -70,6 +71,129 @@ function Floodlights({ lamps, yaw }: { lamps: XZ[]; yaw: number }) {
         <mesh key={i} geometry={geo} material={mat} position={[x, 18.4, z]} rotation-y={yaw} userData={{ noInk: true }} />
       ))}
     </>
+  );
+}
+
+function ballTexture() {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 128;
+  const x = c.getContext("2d")!;
+  x.fillStyle = "#f7f7f2";
+  x.fillRect(0, 0, 256, 128);
+  x.fillStyle = "#1d1f24";
+  for (const [px, py] of [
+    [32, 64],
+    [96, 30],
+    [96, 98],
+    [160, 64],
+    [224, 30],
+    [224, 98],
+    [0, 10],
+    [64, 6],
+    [128, 122],
+    [192, 6],
+  ]) {
+    x.beginPath();
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 5) * Math.PI * 2 - Math.PI / 2;
+      x.lineTo(px! + Math.cos(a) * 14, py! + Math.sin(a) * 14);
+    }
+    x.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/**
+ * A football to play with: walk or run into it to dribble and shoot. It rolls and slows, bounces off the edges of
+ * the pitch, and a ball over the goal line between the posts is a goal (blue at one end, gold at the other); then it
+ * goes back to the centre spot.
+ */
+function Ball({ frame, game, onGoal }: { frame: NonNullable<ReturnType<typeof groundFrame>>; game: React.RefObject<Game>; onGoal: (blue: number, gold: number) => void }) {
+  const R = 0.22;
+  const mesh = useRef<THREE.Mesh>(null);
+  const tex = useMemo(() => ballTexture(), []);
+  useEffect(() => () => tex.dispose(), [tex]);
+  const st = useRef({ l: 0, s: 0, vl: 0, vs: 0, reset: 0, blue: 0, gold: 0 });
+  const cos = Math.cos(frame.yaw);
+  const sin = Math.sin(frame.yaw);
+  // World x, z → the pitch's l (along) and s (across), and back.
+  const toLocal = (x: number, z: number) => {
+    const dx = x - frame.x;
+    const dz = z - frame.z;
+    return [dx * cos - dz * sin, dx * sin + dz * cos] as const;
+  };
+  const q = useMemo(() => new THREE.Quaternion(), []);
+  useFrame((_, dtRaw) => {
+    const dt = Math.min(dtRaw, 0.05);
+    const b = st.current;
+    const g = game.current;
+    const m = mesh.current;
+    if (!m || !g) return;
+    if (b.reset > 0) {
+      b.reset -= dt;
+      if (b.reset <= 0) Object.assign(b, { l: 0, s: 0, vl: 0, vs: 0 });
+    }
+    // The player's feet push the ball; the faster you go, the harder the kick.
+    const [pl, ps] = toLocal(g.pos.x, g.pos.z);
+    const dl = b.l - pl;
+    const ds = b.s - ps;
+    const d = Math.hypot(dl, ds);
+    if (d < 0.9 && g.jumpY < 0.4) {
+      const hl = Math.sin(g.heading) * cos - Math.cos(g.heading) * sin;
+      const hs = Math.sin(g.heading) * sin + Math.cos(g.heading) * cos;
+      const power = 1.5 + g.speed * 1.35;
+      // Mostly where you're heading, a little away from your feet.
+      const nl = d > 0.01 ? dl / d : hl;
+      const ns = d > 0.01 ? ds / d : hs;
+      b.vl = (hl * 0.9 + nl * 0.1) * power;
+      b.vs = (hs * 0.9 + ns * 0.1) * power;
+      b.l = pl + nl * 0.92;
+      b.s = ps + ns * 0.92;
+    }
+    // Roll, slow down.
+    const k = Math.exp(-dt * 0.85);
+    b.vl *= k;
+    b.vs *= k;
+    b.l += b.vl * dt;
+    b.s += b.vs * dt;
+    const goalLine = PITCH.L / 2 - 1;
+    const touch = PITCH.W / 2 - 0.6;
+    if (b.reset <= 0 && Math.abs(b.l) > goalLine && Math.abs(b.s) < GOAL.w / 2 - R) {
+      if (b.l > 0) b.blue++;
+      else b.gold++;
+      onGoal(b.blue, b.gold);
+      b.reset = 2.2;
+      b.vl *= 0.2;
+      b.vs *= 0.2;
+    }
+    // The goal's back and the edges of the pitch keep it in play.
+    const back = goalLine + (Math.abs(b.s) < GOAL.w / 2 ? GOAL.d : 0.6);
+    if (Math.abs(b.l) > back) {
+      b.l = Math.sign(b.l) * back;
+      b.vl *= -0.45;
+    }
+    if (Math.abs(b.s) > touch) {
+      b.s = Math.sign(b.s) * touch;
+      b.vs *= -0.5;
+    }
+    const [x, z] = frame.at(b.l, b.s);
+    // Spin about the axis across its path.
+    const wx = x - m.position.x;
+    const wz = z - m.position.z;
+    const step = Math.hypot(wx, wz);
+    if (step > 1e-4 && step < 2) {
+      q.setFromAxisAngle(new THREE.Vector3(wz / step, 0, -wx / step), step / R);
+      m.quaternion.premultiply(q);
+    }
+    m.position.set(x, R, z);
+  });
+  return (
+    <mesh ref={mesh} castShadow material={toon({ map: tex })}>
+      <sphereGeometry args={[R, 18, 12]} />
+    </mesh>
   );
 }
 
@@ -208,7 +332,7 @@ function pitchTexture() {
   return t;
 }
 
-export function Stadium({ world }: { world: World }) {
+export function Stadium({ world, game, onGoal }: { world: World; game: React.RefObject<Game>; onGoal: (blue: number, gold: number) => void }) {
   const built = useMemo(() => {
     const f = groundFrame(world);
     if (!f) return null;
@@ -318,6 +442,7 @@ export function Stadium({ world }: { world: World }) {
       <mesh geometry={built.solid} material={toon({ vertexColors: true })} castShadow receiveShadow />
       <mesh geometry={built.net} material={netMat} userData={{ noInk: true }} />
       <Floodlights lamps={built.lamps} yaw={f.yaw} />
+      <Ball frame={f} game={game} onGoal={onGoal} />
       <mesh geometry={built.fin} material={toon({ color: "#f6f2ea" })} position={[finAt[0], 0.09, finAt[1]]} rotation-y={f.yaw} userData={{ noInk: true }} />
     </group>
   );

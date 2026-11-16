@@ -236,6 +236,15 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
     [flash, ui],
   );
 
+  // ── A goal at the sports ground: a cheer and the score ──
+  const onGoal = useCallback(
+    (blue: number, gold: number) => {
+      game.current.anim.cheer = 1.6;
+      flash(fmt(ui.goal!, { a: blue, b: gold }));
+    },
+    [flash, ui],
+  );
+
   // ── A train pulling into Potheri: a toast and two notes on the horn ──
   const onTrain = useCallback(() => {
     flash(ui.train!);
@@ -927,6 +936,7 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
               done={progress.done}
               onChime={onChime}
               onTrain={onTrain}
+              onGoal={onGoal}
               party={party}
               partyVersion={partyVersion}
             />

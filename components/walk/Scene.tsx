@@ -68,6 +68,7 @@ export function Scene({
   done,
   onChime,
   onTrain,
+  onGoal,
   party,
   partyVersion,
 }: {
@@ -91,6 +92,8 @@ export function Scene({
   onChime: (hour: number) => void;
   /** A train sets off towards Potheri while you're near the station. */
   onTrain: () => void;
+  /** A goal at the sports ground: the score so far. */
+  onGoal: (blue: number, gold: number) => void;
   /** Friends in your multiplayer room, if you're in one. */
   party: Party | null;
   partyVersion: number;
@@ -603,7 +606,7 @@ export function Scene({
         </group>
       ))}
       <Grounds world={world} />
-      <Stadium world={world} />
+      <Stadium world={world} game={game} onGoal={onGoal} />
       <Rewards world={world} npcs={npcs} done={done} />
       {world.rail ? <Railway world={world} game={game} onTrain={onTrain} /> : null}
       {party ? <Friends party={party} version={partyVersion} /> : null}
