@@ -3,7 +3,8 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { World, XZ } from "@/lib/walk/world";
-import { toon } from "./curve";
+import { addGeo, newBuf, toGeo } from "./buildings";
+import { bend, toon } from "./curve";
 import { obb } from "./Grounds";
 
 /**
@@ -14,6 +15,28 @@ import { obb } from "./Grounds";
 
 export const PITCH = { L: 54, W: 36 };
 export const TRACK = { r0: 19.5, lanes: 5, lane: 1.05 };
+/** Goal mouth: width scaled with the pitch, height real (people are real size). */
+export const GOAL = { w: 4.8, h: 2.44, d: 1.6 };
+
+function netTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const x = c.getContext("2d")!;
+  x.strokeStyle = "rgba(255,255,255,0.9)";
+  x.lineWidth = 3;
+  for (let i = 0; i <= 64; i += 16) {
+    x.beginPath();
+    x.moveTo(i, 0);
+    x.lineTo(i, 64);
+    x.moveTo(0, i);
+    x.lineTo(64, i);
+    x.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(8, 4);
+  return t;
+}
 
 /** The ground's frame: centre, turn, and a point in it (l along the pitch, s across) in world x, z. */
 export function groundFrame(world: World) {
@@ -24,6 +47,36 @@ export function groundFrame(world: World) {
   const sin = Math.sin(o.yaw);
   const at = (l: number, s: number): XZ => [o.x + cos * l + sin * s, o.z - sin * l + cos * s];
   return { ...o, at };
+}
+
+/** The goal nets: seen from both sides, see-through between the strings. */
+const netMats = new WeakMap<THREE.Texture, THREE.Material>();
+function netMaterial(t: THREE.Texture) {
+  let m = netMats.get(t);
+  if (!m) {
+    m = bend(new THREE.MeshToonMaterial({ map: t, transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: false }));
+    netMats.set(t, m);
+  }
+  return m;
+}
+
+/** Several geometries as one (position and normal, plus uv for the net texture). */
+function mergeAll(list: THREE.BufferGeometry[]) {
+  const pos: number[] = [];
+  const nrm: number[] = [];
+  const uv: number[] = [];
+  for (const g0 of list) {
+    const g = g0.index ? g0.toNonIndexed() : g0;
+    pos.push(...(g.getAttribute("position").array as Float32Array));
+    nrm.push(...(g.getAttribute("normal").array as Float32Array));
+    uv.push(...(g.getAttribute("uv").array as Float32Array));
+    g0.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+  out.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  return out;
 }
 
 /** Points round a stadium shape (two straights of length `straight`, two half circles of radius r), every ~step m. */
@@ -144,18 +197,59 @@ export function Stadium({ world }: { world: World }) {
     // The finish line across the lanes, at the end of the home straight.
     const fin = new THREE.PlaneGeometry(0.5, TRACK.lanes * TRACK.lane, 1, 4);
     fin.rotateX(-Math.PI / 2);
-    return { f, field, track, apron, lines, fin, tex: pitchTexture() };
+    // Goals (white posts and crossbar, a net behind) and corner flags.
+    const b = newBuf();
+    const white = new THREE.Color("#f7f7f2");
+    const M = new THREE.Matrix4();
+    const put = (geo: THREE.BufferGeometry, l: number, y: number, s: number, c: THREE.Color, rx = 0, rz = 0) => {
+      const [x, z] = f.at(l, s);
+      addGeo(b, geo, M.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, f.yaw, rz, "YXZ")), new THREE.Vector3(1, 1, 1)), c);
+    };
+    const post = new THREE.CylinderGeometry(0.06, 0.06, GOAL.h, 8);
+    const bar = new THREE.CylinderGeometry(0.06, 0.06, GOAL.w + 0.12, 8);
+    const nets: THREE.BufferGeometry[] = [];
+    for (const d of [-1, 1]) {
+      const gl = d * (PITCH.L / 2 - 1);
+      for (const s of [-GOAL.w / 2, GOAL.w / 2]) put(post, gl, GOAL.h / 2, s, white);
+      put(bar, gl, GOAL.h, 0, white, Math.PI / 2);
+      // Net: back, roof and two sides, as one bent strip each.
+      const back = new THREE.PlaneGeometry(GOAL.w, GOAL.h, 4, 2);
+      back.rotateY(Math.PI / 2);
+      const [bx, bz] = f.at(gl + d * GOAL.d, 0);
+      back.applyMatrix4(new THREE.Matrix4().makeRotationY(f.yaw)).translate(bx, GOAL.h / 2, bz);
+      const roof = new THREE.PlaneGeometry(GOAL.d, GOAL.w, 2, 4);
+      roof.rotateX(-Math.PI / 2);
+      const [rx2, rz2] = f.at(gl + (d * GOAL.d) / 2, 0);
+      roof.applyMatrix4(new THREE.Matrix4().makeRotationY(f.yaw)).translate(rx2, GOAL.h, rz2);
+      nets.push(back, roof);
+      for (const s of [-GOAL.w / 2, GOAL.w / 2]) {
+        const side = new THREE.PlaneGeometry(GOAL.d, GOAL.h, 2, 2);
+        const [sx, sz] = f.at(gl + (d * GOAL.d) / 2, s);
+        side.applyMatrix4(new THREE.Matrix4().makeRotationY(f.yaw)).translate(sx, GOAL.h / 2, sz);
+        nets.push(side);
+      }
+      // Corner flags.
+      for (const s of [-(PITCH.W / 2 - 1), PITCH.W / 2 - 1]) {
+        const cl = d * (PITCH.L / 2 - 1);
+        put(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), cl, 0.75, s, white);
+        put(new THREE.BoxGeometry(0.02, 0.35, 0.45), cl, 1.3, s + 0.24 * Math.sign(s) * -1, new THREE.Color("#ffd166"));
+      }
+    }
+    const net = mergeAll(nets);
+    return { f, field, track, apron, lines, fin, tex: pitchTexture(), solid: toGeo(b), net, netTex: netTexture() };
   }, [world]);
   useEffect(
     () => () => {
       if (!built) return;
-      for (const g of [built.field, built.track, built.apron, built.fin, ...built.lines]) g.dispose();
+      for (const g of [built.field, built.track, built.apron, built.fin, built.solid, built.net, ...built.lines]) g.dispose();
       built.tex.dispose();
+      built.netTex.dispose();
     },
     [built],
   );
   if (!built) return null;
   const { f } = built;
+  const netMat = netMaterial(built.netTex);
   const finAt = f.at(PITCH.L / 2 - 4, -(TRACK.r0 + (TRACK.lanes * TRACK.lane) / 2));
   return (
     <group>
@@ -165,6 +259,8 @@ export function Stadium({ world }: { world: World }) {
       {built.lines.map((g, i) => (
         <mesh key={i} geometry={g} material={toon({ color: "#f6f2ea" })} userData={{ noInk: true }} />
       ))}
+      <mesh geometry={built.solid} material={toon({ vertexColors: true })} castShadow receiveShadow />
+      <mesh geometry={built.net} material={netMat} userData={{ noInk: true }} />
       <mesh geometry={built.fin} material={toon({ color: "#f6f2ea" })} position={[finAt[0], 0.09, finAt[1]]} rotation-y={f.yaw} userData={{ noInk: true }} />
     </group>
   );
