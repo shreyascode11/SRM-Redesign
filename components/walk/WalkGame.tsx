@@ -3,6 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Outfit, WalkScript } from "@/lib/walk/script";
+import { TOUR_STOPS } from "@/lib/walk/tour";
 import { chennaiHour, Collider, Paths, type World, type XZ } from "@/lib/walk/world";
 import { Dialogue, EmoteWheel, Finish, fmt, FriendsPanel, hudBtn, HuntPanel, Joystick, MapPanel, Minimap, OutfitPanel, PauseMenu, PlaceCard, QuestLog, type Talk } from "./Panels";
 import { bestFor, fmtTime, huntNumber, huntPlaces, KIND_EMOJI, saveHunt, streak } from "./hunt";
@@ -12,8 +13,7 @@ import { type Npc, type Overlay, Scene, type Sky } from "./Scene";
 import { carrying, type Game, jump, loadOutfit, loadProgress, newGame, type Progress, saveOutfit, saveProgress, stepTarget } from "./state";
 
 const noSub = () => () => {};
-/** The guided tour's stops, in walking order from the main gate. */
-const TOUR = ["gate", "university-building", "library", "clock-tower", "java", "tech-park", "auditorium", "paari", "hospital", "potheri"];
+
 const zero = () => 0;
 
 /** Light and sky: a painted teal day by default (anime style), or Chennai's real time of day. */
@@ -799,7 +799,7 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
 
   // ── The guided tour: the student walks (runs) the campus on autopilot, stopping at the main places ──
   const [tour, setTour] = useState<null | { i: number; arrived: boolean }>(null);
-  const tourStops = useMemo(() => (world ? TOUR.filter((id) => world.places[id] && ui[`tour_${id}`]) : []), [world, ui]);
+  const tourStops = useMemo(() => (world ? TOUR_STOPS.filter((id) => world.places[id] && ui[`tour_${id}`]) as string[] : []), [world, ui]);
   const goTour = useCallback(
     (i: number, teleport: boolean) => {
       const id = tourStops[i];
