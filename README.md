@@ -138,6 +138,8 @@ in the header, the homepage hero, or the campus and hostel pages.
   quests stay visible on campus: the dancer keeps dancing (and you dance too), the painting stands on its easel, the
   guitar plays, the telescope, the gaming desk, the trophy, the stalls and the new bins are all there. Students walk the
   roads too; they wave, answer your emotes and tell you where they're heading.
+- **Plan your visit** (/visit): the address with directions, the train (Potheri station is beside the campus) and the
+  road, the guided tour's ten stops as a walking list, and the admissions numbers; in English, Tamil and Hindi.
 - **Guided tour.** For visitors and parents who'd rather not play: "Take the guided tour" (or 🧭 in the game) walks
   your student along real paths to ten stops, from the main gate to Potheri station, with a short card at each built
   from SRM's own published information, and the building's page one tap away.
