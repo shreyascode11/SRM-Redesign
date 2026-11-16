@@ -10,6 +10,7 @@ export async function getNavData(): Promise<NavData> {
   const t = await getTranslations("Nav");
   const hostelT = await getTranslations("Hostels");
   const lifeT = await getTranslations("Life");
+  const visitT = await getTranslations("Visit");
   const { campuses, colleges, featuredStory, missions, naacGrade, nirf, programmes, site, studentWork } = getContent(await getLocale());
   const universityRank = nirf.ranks.find((r) => r.id === "university")?.rank;
   const camber = studentWork[0];
@@ -97,6 +98,7 @@ export async function getNavData(): Promise<NavData> {
             title: t("ourCampuses"),
             links: [
               { label: t("walk"), href: "/walk" },
+              { label: visitT("nav"), href: "/visit" },
               ...campuses.filter((c) => c.kind === "campus").map((c) => ({ label: c.name, href: `/campuses/${c.slug}` })),
             ],
           },
