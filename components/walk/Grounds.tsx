@@ -13,7 +13,7 @@ import { toon } from "./curve";
  */
 
 /** A box around a mapped area: centre, half length and half width, and the turn of its long side. */
-function obb(p: XZ[]) {
+export function obb(p: XZ[]) {
   let best = 0;
   let dx = 1;
   let dz = 0;

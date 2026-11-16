@@ -8,6 +8,7 @@ import { chennaiHour, type Collider, type Paths, type World, type XZ } from "@/l
 import { type Anim, Character, newAnim, OUTFIT_SIZES } from "./Character";
 import { Friends } from "./Friends";
 import { Grounds } from "./Grounds";
+import { Stadium } from "./Stadium";
 import type { Party } from "./party";
 import { Railway } from "./Railway";
 import { Held, QUEST_LOOPS, Rewards } from "./Rewards";
@@ -602,6 +603,7 @@ export function Scene({
         </group>
       ))}
       <Grounds world={world} />
+      <Stadium world={world} />
       <Rewards world={world} npcs={npcs} done={done} />
       {world.rail ? <Railway world={world} game={game} onTrain={onTrain} /> : null}
       {party ? <Friends party={party} version={partyVersion} /> : null}
