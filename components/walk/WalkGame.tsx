@@ -1036,13 +1036,13 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
                 <button
                   type="button"
                   onClick={() => toggleBanner(false)}
-                  className="pointer-events-auto absolute top-16 left-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#14101a]/80 px-4 text-sm font-semibold text-white backdrop-blur sm:top-3 sm:left-1/2 sm:-translate-x-1/2"
+                  className="pointer-events-auto absolute top-16 left-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#14101a]/80 px-4 text-sm font-semibold text-white backdrop-blur"
                 >
                   <span aria-hidden="true">🎯</span>
                   {ui.showTarget}
                 </button>
               ) : (
-                <div className="pointer-events-none absolute top-16 left-3 flex max-w-[calc(100vw-9rem)] items-start gap-1 rounded-2xl bg-[#14101a]/80 py-2 pr-1 pl-4 text-left text-sm font-semibold text-white backdrop-blur sm:top-3 sm:left-1/2 sm:w-max sm:max-w-[min(34rem,56vw)] sm:-translate-x-1/2">
+                <div className="pointer-events-none absolute top-16 left-3 flex max-w-[calc(100vw-9rem)] items-start gap-1 rounded-2xl bg-[#14101a]/80 py-2 pr-1 pl-4 text-left text-sm font-semibold text-white backdrop-blur sm:w-max sm:max-w-[min(34rem,56vw)]">
                   <p aria-live="polite" className="py-0.5">
                     <span className="text-[#ffd166]">{ui.target}:</span> {targetInfo.hint}
                     {held.length ? <span className="block text-xs font-normal text-white/80">{ui.carrying}: {held.map((i) => script.items[i]).join(", ")}</span> : null}
@@ -1059,7 +1059,7 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
               )
             ) : null}
             {hunt && !talk ? (
-              <p role="timer" aria-live="off" className="pointer-events-none absolute top-32 left-3 inline-flex items-center gap-2 rounded-full bg-[#14101a]/85 py-1 pr-1 pl-4 text-sm font-bold text-white shadow-lg backdrop-blur sm:top-16 sm:left-1/2 sm:-translate-x-1/2">
+              <p role="timer" aria-live="off" className="pointer-events-none absolute top-32 left-3 inline-flex items-center gap-2 rounded-full bg-[#14101a]/85 py-1 pr-1 pl-4 text-sm font-bold text-white shadow-lg backdrop-blur">
                 <span>
                   🏁 {hunt.i}/{hunt.places.length} · {fmtTime(Date.now() - hunt.start)}
                 </span>
@@ -1071,14 +1071,14 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
               <p
                 role="timer"
                 aria-live="off"
-                className={`pointer-events-none absolute top-32 left-3 rounded-full px-4 py-2 text-sm font-bold shadow-lg sm:top-16 sm:left-1/2 sm:-translate-x-1/2 ${secondsLeft <= 10 ? "bg-[#c1121f] text-white" : "bg-[#ffd166] text-black"}`}
+                className={`pointer-events-none absolute top-32 left-3 rounded-full px-4 py-2 text-sm font-bold shadow-lg ${secondsLeft <= 10 ? "bg-[#c1121f] text-white" : "bg-[#ffd166] text-black"}`}
               >
                 <span aria-hidden="true">⏱ </span>
                 {fmt(ui.timeLeft!, { s: secondsLeft })} · {timerQuest.title}
               </p>
             ) : null}
             {toast ? (
-              <p role="status" className="walk-toast absolute top-40 left-3 max-w-[calc(100vw-10rem)] rounded-2xl sm:top-20 sm:left-1/2 sm:w-max sm:max-w-[60vw] sm:-translate-x-1/2 bg-[#ffd166] px-5 py-2 text-center font-bold text-black shadow-xl">
+              <p role="status" className="walk-toast absolute top-40 left-3 max-w-[calc(100vw-10rem)] rounded-2xl sm:top-44 sm:left-1/2 sm:w-max sm:max-w-[60vw] sm:-translate-x-1/2 bg-[#ffd166] px-5 py-2 text-center font-bold text-black shadow-xl">
                 {toast}
               </p>
             ) : null}
