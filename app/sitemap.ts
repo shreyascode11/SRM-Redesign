@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/research",
     "/stories",
     "/walk",
+    "/visit",
     ...programmes.map((p) => `/programmes/${p.slug}`),
     ...campuses.map((c) => `/campuses/${c.slug}`),
     ...stories.filter((s) => !isTodo(s.title)).map((s) => `/stories/${s.slug}`),
