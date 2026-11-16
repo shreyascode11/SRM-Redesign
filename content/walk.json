@@ -367,6 +367,12 @@
       "osm": "PARK",
       "name": "Campus park",
       "kind": "park"
+    },
+    {
+      "id": "sports-ground",
+      "name": "Sports ground",
+      "kind": "park",
+      "href": "/student-life"
     }
   ],
   "people": [
