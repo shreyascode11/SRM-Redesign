@@ -48,17 +48,34 @@ export function groundFrame(world: World) {
   const cos = Math.cos(o.yaw);
   const sin = Math.sin(o.yaw);
   const at = (l: number, s: number): XZ => [o.x + cos * l + sin * s, o.z - sin * l + cos * s];
-  // Fit the ground to the area: a full pitch ringed by the running track where there's room; otherwise a pitch (in
-  // real proportions) with a stand along one side.
-  const ring = TRACK.r0 + TRACK.lanes * TRACK.lane + 1.4;
-  const track = o.L * 2 >= PITCH.L + ring * 2 && o.W * 2 >= ring * 2 + 9;
-  const W = track ? PITCH.W : Math.min(PITCH.W, o.W * 2 - 13);
-  const L = track ? PITCH.L : Math.min(PITCH.L, o.L * 2 - 8, W * 1.6);
-  const standS = track ? ring + 2.6 : W / 2 + 2.2;
-  const standL = Math.min(36, L * 0.62);
-  const towerL = track ? L / 2 + TRACK.r0 * 0.75 : L / 2 + 1.8;
-  const towerS = track ? ring + 1.6 : W / 2 + 1.2;
-  return { ...o, at, L, W, track, standS, standL, towerL, towerS };
+  // Fit the ground to the area. A running track first: as wide as the area allows (an apron outside it), four lanes
+  // (five on a big ground), its straights taking the length that's left. Inside it, the biggest pitch in real
+  // proportions whose corners stay clear of the inner lane (as on a real athletics ground, the pitch reaches into
+  // the bends). Too small for a track: a pitch alone, with the stand beside it if there's room.
+  const fullL = o.L * 2;
+  const fullW = o.W * 2;
+  const APRON = 1;
+  const lanes = fullW >= 60 ? 5 : 4;
+  const ringOut = Math.min(TRACK.r0 + 5 * TRACK.lane + APRON, fullW / 2 - 2.2);
+  const outer = ringOut - APRON;
+  const r0 = outer - lanes * TRACK.lane;
+  const S = Math.min(PITCH.L, fullL - 2 * ringOut - 3);
+  const track = r0 >= 14 && S >= 16;
+  let W = Math.min(PITCH.W, fullW - 13);
+  let L = Math.min(PITCH.L, fullL - 8, W * 1.6);
+  if (track) {
+    for (W = PITCH.W; W > 16; W -= 0.5) {
+      const reach = Math.sqrt(Math.max(0, (r0 - 1.2) ** 2 - (W / 2) ** 2));
+      L = Math.min(PITCH.L, S + 2 * reach);
+      if (L >= W * 1.5) break;
+    }
+    L = Math.min(L, W * 1.6);
+  }
+  const standS = track ? ringOut + 2 : W / 2 + 2.2;
+  const standL = fullW / 2 >= standS + 5 ? Math.min(36, L * 0.62) : 0;
+  const towerL = track ? fullL / 2 - 2 : L / 2 + 1.8;
+  const towerS = track ? fullW / 2 - 2 : W / 2 + 1.2;
+  return { ...o, at, L, W, track, r0, lanes, S, outer, standS, standL, towerL, towerS };
 }
 
 /** The floodlights' faces: dark by day, glowing from dusk (like the street lamps). */
@@ -350,12 +367,11 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
     if (!f) return null;
     const field = new THREE.PlaneGeometry(f.L, f.W, Math.ceil(f.L / 2), Math.ceil(f.W / 2));
     field.rotateX(-Math.PI / 2);
-    const outerR = TRACK.r0 + TRACK.lanes * TRACK.lane;
-    const track = f.track ? band(f.L, TRACK.r0, outerR, 0.07, f.at) : null;
-    const apron = f.track ? band(f.L, outerR, outerR + 1.4, 0.06, f.at) : null;
-    const lines = f.track ? Array.from({ length: TRACK.lanes + 1 }, (_, i) => band(f.L, TRACK.r0 + i * TRACK.lane - 0.05, TRACK.r0 + i * TRACK.lane + 0.05, 0.085, f.at)) : [];
+    const track = f.track ? band(f.S, f.r0, f.outer, 0.07, f.at) : null;
+    const apron = f.track ? band(f.S, f.outer, f.outer + 1, 0.06, f.at) : null;
+    const lines = f.track ? Array.from({ length: f.lanes + 1 }, (_, i) => band(f.S, f.r0 + i * TRACK.lane - 0.05, f.r0 + i * TRACK.lane + 0.05, 0.085, f.at)) : [];
     // The finish line across the lanes, at the end of the home straight.
-    const fin = new THREE.PlaneGeometry(0.5, TRACK.lanes * TRACK.lane, 1, 4);
+    const fin = new THREE.PlaneGeometry(0.5, f.lanes * TRACK.lane, 1, 4);
     fin.rotateX(-Math.PI / 2);
     // Goals (white posts and crossbar, a net behind) and corner flags.
     const b = newBuf();
@@ -405,7 +421,7 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
       addGeo(b, box, M.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(tilt, f.yaw, 0, "YXZ")), new THREE.Vector3(sl, sy, ss)), c);
     };
     const concrete = new THREE.Color("#c9c3b6");
-    for (let row = 0; row < 5; row++) {
+    for (let row = 0; row < (standL > 0 ? 5 : 0); row++) {
       const y = 0.45 * (row + 1);
       const s = standS + row * 0.9;
       sized(0, y / 2, s, standL, y, 0.9, concrete);
@@ -414,8 +430,10 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
         sized(l, y + 0.2, s - 0.1, 1.5, 0.4, 0.45, new THREE.Color((k + row) % 2 ? "#2c3e74" : "#e2b13c"));
       }
     }
-    for (const l of [-standL / 2, -standL / 6, standL / 6, standL / 2]) sized(l, 3.1, standS + 4.4, 0.25, 6.2, 0.25, new THREE.Color("#5b6472"));
-    sized(0, 6.3, standS + 2, standL + 2, 0.25, 6.4, new THREE.Color("#c8323d"), -0.12);
+    if (standL > 0) {
+      for (const l of [-standL / 2, -standL / 6, standL / 6, standL / 2]) sized(l, 3.1, standS + 4.4, 0.25, 6.2, 0.25, new THREE.Color("#5b6472"));
+      sized(0, 6.3, standS + 2, standL + 2, 0.25, 6.4, new THREE.Color("#c8323d"), -0.12);
+    }
 
     // Floodlight towers at the four corners, outside the track.
     const lamps: XZ[] = [];
@@ -440,7 +458,7 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
   if (!built) return null;
   const { f } = built;
   const netMat = netMaterial(built.netTex);
-  const finAt = f.at(f.L / 2 - 4, -(TRACK.r0 + (TRACK.lanes * TRACK.lane) / 2));
+  const finAt = f.at(f.S / 2 - 2, -(f.r0 + (f.lanes * TRACK.lane) / 2));
   return (
     <group>
       <mesh geometry={built.field} material={toon({ map: built.tex })} position={[f.x, 0.06, f.z]} rotation-y={f.yaw} receiveShadow userData={{ noInk: true }} />
