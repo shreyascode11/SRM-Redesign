@@ -487,10 +487,25 @@ export function MapPanel({
     const scale = Math.min(c.clientWidth / (b.maxX - b.minX), c.clientHeight / (b.maxZ - b.minZ));
     drawMap(ctx, world, c.clientWidth, c.clientHeight, { cx: (b.minX + b.maxX) / 2, cz: (b.minZ + b.maxZ) / 2, scale }, game.current, { target: game.current.target, people, friends });
   }, [world, game, people, friends]);
+  // Type to find a place (any part of its name or its kind).
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
   const groups = new Map<string, WalkPlace[]>();
-  for (const p of script.places) groups.set(p.kindLabel, [...(groups.get(p.kindLabel) ?? []), p]);
+  for (const p of script.places) if (!q || p.name.toLowerCase().includes(q) || p.kindLabel.toLowerCase().includes(q)) groups.set(p.kindLabel, [...(groups.get(p.kindLabel) ?? []), p]);
   return (
     <Panel title={ui.map!} onClose={onClose} closeLabel={ui.close!} wide>
+      <label className="mb-3 block">
+        <span className="sr-only">{ui.mapSearch}</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={ui.mapSearch}
+          className="min-h-11 w-full rounded-xl border border-white/25 bg-black/30 px-3 text-white placeholder:text-white/50 focus-visible:outline-3 focus-visible:outline-[#ffd166]"
+        />
+      </label>
+      <p className="mb-3 text-xs text-white/70">{ui.mapHint}</p>
+      {q && !groups.size ? <p className="mb-3 text-sm">{ui.mapNone}</p> : null}
       <canvas ref={ref} role="img" aria-label={ui.minimap} className="aspect-[4/3] w-full rounded-xl" />
       {friendList.length && onJumpFriend ? (
         <section className="mt-4">
