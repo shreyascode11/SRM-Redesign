@@ -1,10 +1,11 @@
 "use client";
 
+import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { World, XZ } from "@/lib/walk/world";
 import { addGeo, newBuf, toGeo } from "./buildings";
-import { bend, toon } from "./curve";
+import { bend, curve, toon } from "./curve";
 import { obb } from "./Grounds";
 
 /**
@@ -47,6 +48,29 @@ export function groundFrame(world: World) {
   const sin = Math.sin(o.yaw);
   const at = (l: number, s: number): XZ => [o.x + cos * l + sin * s, o.z - sin * l + cos * s];
   return { ...o, at };
+}
+
+/** The floodlights' faces: dark by day, glowing from dusk (like the street lamps). */
+function Floodlights({ lamps, yaw }: { lamps: XZ[]; yaw: number }) {
+  const mat = useMemo(() => bend(new THREE.MeshToonMaterial({ color: "#000000", emissive: "#fff6dc", transparent: true, opacity: 0.25 })), []);
+  const geo = useMemo(() => new THREE.BoxGeometry(2.9, 1.7, 0.1), []);
+  useFrame(() => {
+    mat.opacity = 0.25 + Math.min(1, curve.uNight.value * 2) * 0.75;
+  });
+  useEffect(
+    () => () => {
+      mat.dispose();
+      geo.dispose();
+    },
+    [mat, geo],
+  );
+  return (
+    <>
+      {lamps.map(([x, z], i) => (
+        <mesh key={i} geometry={geo} material={mat} position={[x, 18.4, z]} rotation-y={yaw} userData={{ noInk: true }} />
+      ))}
+    </>
+  );
 }
 
 /** The goal nets: seen from both sides, see-through between the strings. */
@@ -236,7 +260,39 @@ export function Stadium({ world }: { world: World }) {
       }
     }
     const net = mergeAll(nets);
-    return { f, field, track, apron, lines, fin, tex: pitchTexture(), solid: toGeo(b), net, netTex: netTexture() };
+
+    // A covered stand along one side, outside the track: five rows of seats in SRM blue and gold, a roof on posts.
+    const standS = TRACK.r0 + TRACK.lanes * TRACK.lane + 4;
+    const standL = 36;
+    const box = new THREE.BoxGeometry(1, 1, 1);
+    const sized = (l: number, y: number, s: number, sl: number, sy: number, ss: number, c: THREE.Color, tilt = 0) => {
+      const [x, z] = f.at(l, s);
+      addGeo(b, box, M.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(tilt, f.yaw, 0, "YXZ")), new THREE.Vector3(sl, sy, ss)), c);
+    };
+    const concrete = new THREE.Color("#c9c3b6");
+    for (let row = 0; row < 5; row++) {
+      const y = 0.45 * (row + 1);
+      const s = standS + row * 0.9;
+      sized(0, y / 2, s, standL, y, 0.9, concrete);
+      for (let k = 0; k < 18; k++) {
+        const l = -standL / 2 + 1 + k * ((standL - 2) / 17);
+        sized(l, y + 0.2, s - 0.1, 1.5, 0.4, 0.45, new THREE.Color((k + row) % 2 ? "#2c3e74" : "#e2b13c"));
+      }
+    }
+    for (const l of [-standL / 2, -standL / 6, standL / 6, standL / 2]) sized(l, 3.1, standS + 4.4, 0.25, 6.2, 0.25, new THREE.Color("#5b6472"));
+    sized(0, 6.3, standS + 2, standL + 2, 0.25, 6.4, new THREE.Color("#c8323d"), -0.12);
+
+    // Floodlight towers at the four corners, outside the track.
+    const lamps: XZ[] = [];
+    const towerL = PITCH.L / 2 + TRACK.r0 * 0.75;
+    const towerS = TRACK.r0 + TRACK.lanes * TRACK.lane + 3;
+    for (const dl of [-1, 1])
+      for (const ds of [-1, 1]) {
+        sized(dl * towerL, 9, ds * towerS, 0.5, 18, 0.5, new THREE.Color("#7d8590"));
+        sized(dl * towerL, 18.4, ds * towerS, 3.2, 2, 0.4, new THREE.Color("#3b4048"));
+        lamps.push(f.at(dl * towerL - dl * 0.35, ds * towerS - ds * 0.35));
+      }
+    return { f, field, track, apron, lines, fin, tex: pitchTexture(), solid: toGeo(b), net, netTex: netTexture(), lamps };
   }, [world]);
   useEffect(
     () => () => {
@@ -261,6 +317,7 @@ export function Stadium({ world }: { world: World }) {
       ))}
       <mesh geometry={built.solid} material={toon({ vertexColors: true })} castShadow receiveShadow />
       <mesh geometry={built.net} material={netMat} userData={{ noInk: true }} />
+      <Floodlights lamps={built.lamps} yaw={f.yaw} />
       <mesh geometry={built.fin} material={toon({ color: "#f6f2ea" })} position={[finAt[0], 0.09, finAt[1]]} rotation-y={f.yaw} userData={{ noInk: true }} />
     </group>
   );
