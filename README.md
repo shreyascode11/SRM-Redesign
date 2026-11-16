@@ -140,6 +140,9 @@ in the header, the homepage hero, or the campus and hostel pages.
   roads too; they wave, answer your emotes and tell you where they're heading.
 - **Plan your visit** (/visit): the address with directions, the train (Potheri station is beside the campus) and the
   road, the guided tour's ten stops as a walking list, and the admissions numbers; in English, Tamil and Hindi.
+- **Sports ground**, north of the tennis and basketball courts: a football pitch with full markings, goals with nets,
+  a covered stand in SRM blue and gold and floodlights that light up at night, and a ball to dribble and shoot
+  (goals are scored, Blue against Gold). Search the map for it and jump straight there.
 - **Guided tour.** For visitors and parents who'd rather not play: "Take the guided tour" (or 🧭 in the game) walks
   your student along real paths to ten stops, from the main gate to Potheri station, with a short card at each built
   from SRM's own published information, and the building's page one tap away.
