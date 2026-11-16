@@ -2318,5 +2318,36 @@
       "huntText": "The same five places for everyone today. Start at the main gate and find them all as fast as you can.",
       "huntCta": "Play today's hunt"
     }
+  },
+  "Visit": {
+    "meta": {
+      "title": "Plan your visit",
+      "description": "How to get to SRM's Kattankulathur campus by train or road, a ten-stop walk around it, and who to call before you come."
+    },
+    "hero": {
+      "kicker": "Kattankulathur campus",
+      "title": "Plan your visit",
+      "lead": "How to get to SRM's main campus, what to see on a short walk, and who to call before you come."
+    },
+    "getThere": {
+      "title": "Getting here",
+      "address": "Address",
+      "directions": "Directions in Google Maps",
+      "train": "By train",
+      "trainText": "Potheri railway station, on the Tambaram–Chengalpattu suburban line, is right beside the campus. The main entrance, near gate 4, is opposite the station.",
+      "road": "By road"
+    },
+    "walk": {
+      "title": "A walk around campus",
+      "intro": "Ten stops in walking order from the main gate: the same as the guided tour in Walk SRM, where you can take it in 3D first.",
+      "cta": "Take the tour in 3D",
+      "page": "Open the page"
+    },
+    "call": {
+      "title": "Before you come",
+      "intro": "Call admissions to arrange your visit or to ask anything. A counsellor can answer fees, hostel and transport questions directly.",
+      "tour360": "Or take SRM's official 360° virtual tour"
+    },
+    "nav": "Plan your visit"
   }
 }
