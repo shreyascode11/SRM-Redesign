@@ -48,7 +48,17 @@ export function groundFrame(world: World) {
   const cos = Math.cos(o.yaw);
   const sin = Math.sin(o.yaw);
   const at = (l: number, s: number): XZ => [o.x + cos * l + sin * s, o.z - sin * l + cos * s];
-  return { ...o, at };
+  // Fit the ground to the area: a full pitch ringed by the running track where there's room; otherwise a pitch (in
+  // real proportions) with a stand along one side.
+  const ring = TRACK.r0 + TRACK.lanes * TRACK.lane + 1.4;
+  const track = o.L * 2 >= PITCH.L + ring * 2 && o.W * 2 >= ring * 2 + 9;
+  const W = track ? PITCH.W : Math.min(PITCH.W, o.W * 2 - 13);
+  const L = track ? PITCH.L : Math.min(PITCH.L, o.L * 2 - 8, W * 1.6);
+  const standS = track ? ring + 2.6 : W / 2 + 2.2;
+  const standL = Math.min(36, L * 0.62);
+  const towerL = track ? L / 2 + TRACK.r0 * 0.75 : L / 2 + 1.8;
+  const towerS = track ? ring + 1.6 : W / 2 + 1.2;
+  return { ...o, at, L, W, track, standS, standL, towerL, towerS };
 }
 
 /** The floodlights' faces: dark by day, glowing from dusk (like the street lamps). */
@@ -159,8 +169,8 @@ function Ball({ frame, game, onGoal }: { frame: NonNullable<ReturnType<typeof gr
     b.vs *= k;
     b.l += b.vl * dt;
     b.s += b.vs * dt;
-    const goalLine = PITCH.L / 2 - 1;
-    const touch = PITCH.W / 2 - 0.6;
+    const goalLine = frame.L / 2 - 1;
+    const touch = frame.W / 2 - 0.6;
     if (b.reset <= 0 && Math.abs(b.l) > goalLine && Math.abs(b.s) < GOAL.w / 2 - R) {
       if (b.l > 0) b.blue++;
       else b.gold++;
@@ -275,52 +285,54 @@ function band(straight: number, r0: number, r1: number, y: number, at: (l: numbe
   return g;
 }
 
-function pitchTexture() {
+function pitchTexture(L: number, W: number) {
   const c = document.createElement("canvas");
   c.width = 1080;
-  c.height = 720;
+  c.height = Math.round((1080 * W) / L);
   const x = c.getContext("2d")!;
   // Mowing stripes.
   for (let i = 0; i < 12; i++) {
     x.fillStyle = i % 2 ? "#5f9e4d" : "#6aab56";
-    x.fillRect((i * 1080) / 12, 0, 1080 / 12 + 1, 720);
+    x.fillRect((i * 1080) / 12, 0, 1080 / 12 + 1, c.height);
   }
-  const k = 1080 / PITCH.L; // pixels per metre
+  const k = 1080 / L; // pixels per metre
+  const H = Math.round(W * k);
+  const sc = L / PITCH.L; // markings shrink with a smaller pitch
   const m = (v: number) => v * k;
   x.strokeStyle = "#f6f6f0";
   x.lineWidth = 5;
-  x.strokeRect(m(1), m(1), 1080 - m(2), 720 - m(2));
+  x.strokeRect(m(1), m(1), 1080 - m(2), H - m(2));
   x.beginPath();
   x.moveTo(540, m(1));
-  x.lineTo(540, 720 - m(1));
+  x.lineTo(540, H - m(1));
   x.stroke();
   x.beginPath();
-  x.arc(540, 360, m(6), 0, Math.PI * 2);
+  x.arc(540, H / 2, m(6 * sc), 0, Math.PI * 2);
   x.stroke();
   x.fillStyle = "#f6f6f0";
   x.beginPath();
-  x.arc(540, 360, 6, 0, Math.PI * 2);
+  x.arc(540, H / 2, 6, 0, Math.PI * 2);
   x.fill();
   for (const side of [0, 1]) {
     const edge = side ? 1080 - m(1) : m(1);
     const d = side ? -1 : 1;
-    const box = (depth: number, width: number) => x.strokeRect(Math.min(edge, edge + d * m(depth)), 360 - m(width) / 2, m(depth), m(width));
-    box(10.7, 26);
-    box(3.6, 11.9);
+    const box = (depth: number, width: number) => x.strokeRect(Math.min(edge, edge + d * m(depth)), H / 2 - m(width) / 2, m(depth), m(width));
+    box(10.7 * sc, Math.min(26, W * 0.72));
+    box(3.6 * sc, Math.min(11.9, W * 0.33));
     x.beginPath();
-    x.arc(edge + d * m(7.1), 360, 6, 0, Math.PI * 2);
+    x.arc(edge + d * m(7.1 * sc), H / 2, 6, 0, Math.PI * 2);
     x.fill();
     x.beginPath();
-    x.arc(edge + d * m(7.1), 360, m(6), side ? Math.PI - 0.93 : -0.93, side ? Math.PI + 0.93 : 0.93, side === 1);
+    x.arc(edge + d * m(7.1 * sc), H / 2, m(6 * sc), side ? Math.PI - 0.93 : -0.93, side ? Math.PI + 0.93 : 0.93, side === 1);
     x.save();
     x.beginPath();
-    x.rect(side ? 0 : edge + d * m(10.7), 0, side ? edge + d * m(10.7) : 1080, 720);
+    x.rect(side ? 0 : edge + d * m(10.7 * sc), 0, side ? edge + d * m(10.7 * sc) : 1080, H);
     x.clip();
     x.beginPath();
-    x.arc(edge + d * m(7.1), 360, m(6), 0, Math.PI * 2);
+    x.arc(edge + d * m(7.1 * sc), H / 2, m(6 * sc), 0, Math.PI * 2);
     x.stroke();
     x.restore();
-    for (const cy of [m(1), 720 - m(1)]) {
+    for (const cy of [m(1), H - m(1)]) {
       x.beginPath();
       x.arc(edge, cy, m(0.9), 0, Math.PI * 2);
       x.stroke();
@@ -336,12 +348,12 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
   const built = useMemo(() => {
     const f = groundFrame(world);
     if (!f) return null;
-    const field = new THREE.PlaneGeometry(PITCH.L, PITCH.W, 27, 18);
+    const field = new THREE.PlaneGeometry(f.L, f.W, Math.ceil(f.L / 2), Math.ceil(f.W / 2));
     field.rotateX(-Math.PI / 2);
     const outerR = TRACK.r0 + TRACK.lanes * TRACK.lane;
-    const track = band(PITCH.L, TRACK.r0, outerR, 0.07, f.at);
-    const apron = band(PITCH.L, outerR, outerR + 1.4, 0.06, f.at);
-    const lines = Array.from({ length: TRACK.lanes + 1 }, (_, i) => band(PITCH.L, TRACK.r0 + i * TRACK.lane - 0.05, TRACK.r0 + i * TRACK.lane + 0.05, 0.085, f.at));
+    const track = f.track ? band(f.L, TRACK.r0, outerR, 0.07, f.at) : null;
+    const apron = f.track ? band(f.L, outerR, outerR + 1.4, 0.06, f.at) : null;
+    const lines = f.track ? Array.from({ length: TRACK.lanes + 1 }, (_, i) => band(f.L, TRACK.r0 + i * TRACK.lane - 0.05, TRACK.r0 + i * TRACK.lane + 0.05, 0.085, f.at)) : [];
     // The finish line across the lanes, at the end of the home straight.
     const fin = new THREE.PlaneGeometry(0.5, TRACK.lanes * TRACK.lane, 1, 4);
     fin.rotateX(-Math.PI / 2);
@@ -357,7 +369,7 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
     const bar = new THREE.CylinderGeometry(0.06, 0.06, GOAL.w + 0.12, 8);
     const nets: THREE.BufferGeometry[] = [];
     for (const d of [-1, 1]) {
-      const gl = d * (PITCH.L / 2 - 1);
+      const gl = d * (f.L / 2 - 1);
       for (const s of [-GOAL.w / 2, GOAL.w / 2]) put(post, gl, GOAL.h / 2, s, white);
       put(bar, gl, GOAL.h, 0, white, Math.PI / 2);
       // Net: back, roof and two sides, as one bent strip each.
@@ -377,8 +389,8 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
         nets.push(side);
       }
       // Corner flags.
-      for (const s of [-(PITCH.W / 2 - 1), PITCH.W / 2 - 1]) {
-        const cl = d * (PITCH.L / 2 - 1);
+      for (const s of [-(f.W / 2 - 1), f.W / 2 - 1]) {
+        const cl = d * (f.L / 2 - 1);
         put(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), cl, 0.75, s, white);
         put(new THREE.BoxGeometry(0.02, 0.35, 0.45), cl, 1.3, s + 0.24 * Math.sign(s) * -1, new THREE.Color("#ffd166"));
       }
@@ -386,8 +398,7 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
     const net = mergeAll(nets);
 
     // A covered stand along one side, outside the track: five rows of seats in SRM blue and gold, a roof on posts.
-    const standS = TRACK.r0 + TRACK.lanes * TRACK.lane + 4;
-    const standL = 36;
+    const { standS, standL } = f;
     const box = new THREE.BoxGeometry(1, 1, 1);
     const sized = (l: number, y: number, s: number, sl: number, sy: number, ss: number, c: THREE.Color, tilt = 0) => {
       const [x, z] = f.at(l, s);
@@ -408,20 +419,19 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
 
     // Floodlight towers at the four corners, outside the track.
     const lamps: XZ[] = [];
-    const towerL = PITCH.L / 2 + TRACK.r0 * 0.75;
-    const towerS = TRACK.r0 + TRACK.lanes * TRACK.lane + 3;
+    const { towerL, towerS } = f;
     for (const dl of [-1, 1])
       for (const ds of [-1, 1]) {
         sized(dl * towerL, 9, ds * towerS, 0.5, 18, 0.5, new THREE.Color("#7d8590"));
         sized(dl * towerL, 18.4, ds * towerS, 3.2, 2, 0.4, new THREE.Color("#3b4048"));
         lamps.push(f.at(dl * towerL - dl * 0.35, ds * towerS - ds * 0.35));
       }
-    return { f, field, track, apron, lines, fin, tex: pitchTexture(), solid: toGeo(b), net, netTex: netTexture(), lamps };
+    return { f, field, track, apron, lines, fin, tex: pitchTexture(f.L, f.W), solid: toGeo(b), net, netTex: netTexture(), lamps };
   }, [world]);
   useEffect(
     () => () => {
       if (!built) return;
-      for (const g of [built.field, built.track, built.apron, built.fin, built.solid, built.net, ...built.lines]) g.dispose();
+      for (const g of [built.field, built.track, built.apron, built.fin, built.solid, built.net, ...built.lines]) g?.dispose();
       built.tex.dispose();
       built.netTex.dispose();
     },
@@ -430,12 +440,12 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
   if (!built) return null;
   const { f } = built;
   const netMat = netMaterial(built.netTex);
-  const finAt = f.at(PITCH.L / 2 - 4, -(TRACK.r0 + (TRACK.lanes * TRACK.lane) / 2));
+  const finAt = f.at(f.L / 2 - 4, -(TRACK.r0 + (TRACK.lanes * TRACK.lane) / 2));
   return (
     <group>
       <mesh geometry={built.field} material={toon({ map: built.tex })} position={[f.x, 0.06, f.z]} rotation-y={f.yaw} receiveShadow userData={{ noInk: true }} />
-      <mesh geometry={built.apron} material={toon({ color: "#cfc6b4" })} receiveShadow userData={{ noInk: true }} />
-      <mesh geometry={built.track} material={toon({ color: "#b5553c" })} receiveShadow userData={{ noInk: true }} />
+      {built.apron ? <mesh geometry={built.apron} material={toon({ color: "#cfc6b4" })} receiveShadow userData={{ noInk: true }} /> : null}
+      {built.track ? <mesh geometry={built.track} material={toon({ color: "#b5553c" })} receiveShadow userData={{ noInk: true }} /> : null}
       {built.lines.map((g, i) => (
         <mesh key={i} geometry={g} material={toon({ color: "#f6f2ea" })} userData={{ noInk: true }} />
       ))}
@@ -443,7 +453,7 @@ export function Stadium({ world, game, onGoal }: { world: World; game: React.Ref
       <mesh geometry={built.net} material={netMat} userData={{ noInk: true }} />
       <Floodlights lamps={built.lamps} yaw={f.yaw} />
       <Ball frame={f} game={game} onGoal={onGoal} />
-      <mesh geometry={built.fin} material={toon({ color: "#f6f2ea" })} position={[finAt[0], 0.09, finAt[1]]} rotation-y={f.yaw} userData={{ noInk: true }} />
+      {f.track ? <mesh geometry={built.fin} material={toon({ color: "#f6f2ea" })} position={[finAt[0], 0.09, finAt[1]]} rotation-y={f.yaw} userData={{ noInk: true }} /> : null}
     </group>
   );
 }
