@@ -35,6 +35,12 @@ const CROWD_SIZE = 16;
 const CROWD_NAMES = ["Arjun", "Priya", "Karthik", "Divya", "Rahul", "Ananya", "Vikram", "Sneha", "Aditya", "Meera", "Rohan", "Kavya", "Siddharth", "Lakshmi", "Farhan", "Aisha"];
 const RUN = 10;
 const tmp = new THREE.Vector3();
+// The sun's direction and its shadow camera's axes (as three.js builds them), for snapping the shadow map below.
+const SUN = new THREE.Vector3(40, 70, 25);
+const SUN_DIR = SUN.clone().normalize();
+const SUN_X = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), SUN_DIR).normalize();
+const SUN_Y = new THREE.Vector3().crossVectors(SUN_DIR, SUN_X).normalize();
+const SHADOW_SPAN = 76; // shadow-camera-left … right
 const UP = 1.35;
 
 export type Sky = {
@@ -337,8 +343,15 @@ export function Scene({
     }
     // The sun (and its shadow box) follows you.
     if (sun.current) {
-      sun.current.position.set(g.pos.x + 40, 70, g.pos.z + 25);
-      sun.current.target.position.set(g.pos.x, 0, g.pos.z);
+      // The shadow map follows you, but only in whole shadow-map texels: moving it by fractions of a texel made every
+      // shadow edge crawl and sparkle as you ran or jumped.
+      const texel = SHADOW_SPAN / (quality === "high" ? 4096 : 2048);
+      const u = Math.round((g.pos.x * SUN_X.x + g.pos.z * SUN_X.z) / texel) * texel;
+      const v = Math.round((g.pos.x * SUN_Y.x + g.pos.z * SUN_Y.z) / texel) * texel;
+      const w = g.pos.x * SUN_DIR.x + g.pos.z * SUN_DIR.z;
+      tmp.copy(SUN_X).multiplyScalar(u).addScaledVector(SUN_Y, v).addScaledVector(SUN_DIR, w);
+      sun.current.target.position.copy(tmp);
+      sun.current.position.copy(tmp).add(SUN);
       sun.current.target.updateMatrixWorld();
     }
 
