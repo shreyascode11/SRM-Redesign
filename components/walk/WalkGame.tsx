@@ -685,6 +685,7 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
     }, 100);
     return () => window.clearInterval(id);
   }, [party]);
+  const relaysUp = useCallback(() => partyRef.current?.relaysUp() ?? 0, []);
   const friendsXZ = useCallback((): XZ[] => (party ? [...party.friends.values()].filter((f) => f.seen).map((f) => [f.draw.x, f.draw.z]) : []), [party]);
   const jumpToFriend = useCallback(
     (id: string) => {
@@ -1300,6 +1301,9 @@ export default function WalkGame({ script, onExit, startWithOutfit, startTour = 
               onMic={() => void toggleMic()}
               onClose={() => setPanel(null)}
               focusChat={chatFocus > 0}
+              relays={party ? relaysUp : undefined}
+              relaysTotal={party?.relaysTotal ?? 0}
+              onReconnect={party ? () => void joinParty(party.code) : undefined}
             />
           ) : null}
           {panel === "outfit" ? <OutfitPanel script={script} outfit={outfit} onChange={setOutfit} onDone={() => setPanel(null)} /> : null}

@@ -930,6 +930,9 @@ export function FriendsPanel({
   onMic,
   onClose,
   focusChat,
+  relays,
+  relaysTotal = 0,
+  onReconnect,
 }: {
   script: WalkScript;
   code: string | null;
@@ -949,6 +952,10 @@ export function FriendsPanel({
   onMic: () => void;
   onClose: () => void;
   focusChat?: boolean;
+  /** How many matchmaking relays are connected (read every couple of seconds while no friend has joined). */
+  relays?: () => number;
+  relaysTotal?: number;
+  onReconnect?: () => void;
 }) {
   const ui = script.ui;
   const [joinCode, setJoinCode] = useState("");
@@ -1049,7 +1056,7 @@ export function FriendsPanel({
               ))}
             </ul>
           ) : (
-            <p className="mt-1 text-sm text-white/75">{ui.alone}</p>
+            <AloneHelp ui={ui} relays={relays} total={relaysTotal} onReconnect={onReconnect} />
           )}
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <button type="button" aria-pressed={mic} onClick={onMic} className={`${darkBtn} border border-white/20 px-4 aria-pressed:bg-[#ffd166] aria-pressed:text-black`}>
@@ -1164,5 +1171,38 @@ export function HuntPanel({
       </button>
       <p className="mt-3 text-xs text-white/60">{ui.huntNote}</p>
     </Panel>
+  );
+}
+
+/** No friend in the room yet: what to do, how many matchmaking relays are up, and (after a while) help and Reconnect. */
+function AloneHelp({ ui, relays, total, onReconnect }: { ui: Record<string, string>; relays?: () => number; total: number; onReconnect?: () => void }) {
+  const [up, setUp] = useState(() => relays?.() ?? 0);
+  const [waited, setWaited] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setUp(relays?.() ?? 0);
+      setWaited((w) => w + 2);
+    }, 2000);
+    return () => window.clearInterval(id);
+  }, [relays]);
+  return (
+    <div className="mt-1 flex flex-col gap-2 text-sm">
+      <p className="text-white/75">{ui.alone}</p>
+      {relays && total ? (
+        <p className={up ? "text-xs text-white/60" : "text-xs font-semibold text-[#ffb4a8]"} role="status">
+          {up ? fmt(ui.mp_relays!, { n: up, of: total }) : waited >= 6 ? ui.mp_noRelays : fmt(ui.mp_relays!, { n: 0, of: total })}
+        </p>
+      ) : null}
+      {waited >= 16 ? (
+        <div className="rounded-xl bg-white/10 p-3">
+          <p>{ui.mp_stuck}</p>
+          {onReconnect ? (
+            <button type="button" onClick={onReconnect} className={`${darkBtn} mt-2 border border-white/20 px-4`}>
+              {ui.mp_reconnect}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
