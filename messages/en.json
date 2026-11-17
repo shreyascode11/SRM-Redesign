@@ -1646,7 +1646,11 @@
       "goal": "⚽ GOAL! Blue {a} – {b} Gold",
       "mapSearch": "Find a place…",
       "mapHint": "Walk there follows the paths; Jump there takes you straight to it.",
-      "mapNone": "No place by that name."
+      "mapNone": "No place by that name.",
+      "mp_relays": "Connected to {n} of {of} matchmaking servers",
+      "mp_noRelays": "Can't reach the matchmaking servers. Check your internet, or turn off a VPN or ad blocker, then reconnect.",
+      "mp_stuck": "Friend not showing up? Check you both have the same room code and keep this screen open. Some mobile data and college Wi-Fi networks block direct connections: if one of you is on mobile data, try the same Wi-Fi.",
+      "mp_reconnect": "Reconnect"
     },
     "kinds": {
       "arrival": "Getting here",
