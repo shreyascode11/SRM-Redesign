@@ -6,6 +6,7 @@ import * as THREE from "three";
 import type { Outfit } from "@/lib/walk/script";
 import { chennaiHour, type Collider, type Paths, type World, type XZ } from "@/lib/walk/world";
 import { type Anim, Character, newAnim, OUTFIT_SIZES } from "./Character";
+import { Aquatic } from "./Aquatic";
 import { Friends } from "./Friends";
 import { Grounds } from "./Grounds";
 import { Stadium } from "./Stadium";
@@ -607,6 +608,7 @@ export function Scene({
       ))}
       <Grounds world={world} />
       <Stadium world={world} game={game} onGoal={onGoal} />
+      <Aquatic world={world} name={names["aquatic-complex"] ?? "Dr T.R. Paarivendhar Aquatic Complex"} />
       <Rewards world={world} npcs={npcs} done={done} />
       {world.rail ? <Railway world={world} game={game} onTrain={onTrain} /> : null}
       {party ? <Friends party={party} version={partyVersion} /> : null}
