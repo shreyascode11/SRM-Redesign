@@ -59,7 +59,7 @@ const storeys = (f) => {
 };
 
 // Kinds (k): 0 other · 1 academic · 2 hostel · 3 food · 4 tech · 5 health · 6 faith · 7 workshop · 8 admin/events · 9 homes
-const KIND = { other: 0, academic: 1, hostel: 2, food: 3, tech: 4, health: 5, faith: 6, workshop: 7, admin: 8, library: 8, events: 8, arrival: 0, park: 0, homes: 9 };
+const KIND = { other: 0, academic: 1, hostel: 2, food: 3, tech: 4, health: 5, faith: 6, workshop: 7, admin: 8, library: 8, events: 8, arrival: 0, park: 0, sports: 0, homes: 9 };
 const kindOf = (t) => {
   const n = (t.name ?? "").toLowerCase();
   if (t.tourism === "hostel" || n.includes("hostel")) return KIND.hostel;

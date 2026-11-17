@@ -26,6 +26,7 @@ export const KIND_EMOJI: Record<string, string> = {
   shop: "🛍️",
   faith: "🛕",
   park: "🌳",
+  sports: "🏟️",
 };
 
 /** Five places for hunt `n`: different kinds where possible, and none within 40 m of the gate or of each other. */
