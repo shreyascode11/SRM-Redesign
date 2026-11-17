@@ -143,6 +143,9 @@ in the header, the homepage hero, or the campus and hostel pages.
 - **Track and field**, north of the tennis and basketball courts: a four-lane running track round a football pitch
   with full markings, goals with nets and corner flags, floodlights that light up at night, and a ball to dribble and
   shoot (goals are scored, Blue against Gold). Search the map for "sports" and jump straight there.
+- **Dr T.R. Paarivendhar Aquatic Complex**, behind the ground, modelled on photos of it: a ten-lane 50 m pool beside a
+  stand of blue seats, a diving pool under a blue-and-white tower with platforms up to 10 m, a training pool with lane
+  ropes, the light-blue complex building and a scoreboard.
 - **Guided tour.** For visitors and parents who'd rather not play: "Take the guided tour" (or 🧭 in the game) walks
   your student along real paths to ten stops, from the main gate to Potheri station, with a short card at each built
   from SRM's own published information, and the building's page one tap away.
