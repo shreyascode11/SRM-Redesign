@@ -1664,7 +1664,8 @@
       "landmark": "Landmark",
       "homes": "Homes",
       "shop": "Shop",
-      "other": "Campus building"
+      "other": "Campus building",
+      "sports": "Sports"
     },
     "items": {
       "coffee": "a filter coffee",
