@@ -373,6 +373,12 @@
       "name": "Sports ground",
       "kind": "sports",
       "href": "/student-life"
+    },
+    {
+      "id": "aquatic-complex",
+      "name": "Dr T.R. Paarivendhar Aquatic Complex",
+      "kind": "sports",
+      "href": "/student-life"
     }
   ],
   "people": [

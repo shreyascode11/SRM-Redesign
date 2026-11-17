@@ -13,7 +13,7 @@ export type World = {
   buildings: { p: XZ[]; h: number; k: number; n?: string }[];
   roads: { p: XZ[]; w: number; f?: 1 }[];
   water: { p: XZ[] }[];
-  /** s: "park" (lawn), a sport ("tennis", "basketball"), "play" (a play area) or "ground" (the sports ground). */
+  /** s: "park" (lawn), a sport ("tennis", "basketball"), "play" (a play area), "ground" (the sports ground) or "pool" (the aquatic complex). */
   green: { p: XZ[]; s?: string }[];
   /** Car parks, foot overbridges (centre lines) and flights of steps, from OpenStreetMap. */
   parking?: { p: XZ[] }[];
