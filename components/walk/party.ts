@@ -1,5 +1,6 @@
 "use client";
 
+import type { TurnServerConfig } from "trystero";
 import { WALK_RELAYS } from "@/lib/walk/relays";
 import type { Outfit } from "@/lib/walk/script";
 import { type Anim, newAnim, OUTFIT_SIZES } from "./Character";
@@ -88,10 +89,28 @@ export class Party {
     this.code = code;
   }
 
+  /** Whether this site has TURN relays (so friends on strict networks can still connect). */
+  hasTurn = false;
+  /** How many of the relays that introduce players are connected right now. */
+  relaysUp = () => 0;
+  readonly relaysTotal = WALK_RELAYS.length;
+
   async connect() {
-    const { joinRoom } = await import("trystero");
+    const { joinRoom, getRelaySockets } = await import("trystero");
+    // TURN relay servers, if the site has them (/api/turn), for friends whose networks block direct connections.
+    let turnConfig: TurnServerConfig[] = [];
+    try {
+      const res = await fetch("/api/turn", { signal: AbortSignal.timeout(3000) });
+      const data = res.ok ? ((await res.json()) as { iceServers?: unknown }) : null;
+      if (Array.isArray(data?.iceServers))
+        turnConfig = (data.iceServers as TurnServerConfig[]).filter((s) => s && (typeof s.urls === "string" || Array.isArray(s.urls)) && typeof s.username === "string" && typeof s.credential === "string");
+    } catch {
+      // No relays: direct connections only.
+    }
+    this.hasTurn = turnConfig.length > 0;
+    this.relaysUp = () => Object.values((getRelaySockets() ?? {}) as Record<string, WebSocket>).filter((w) => w?.readyState === 1).length;
     // The room code doubles as the password, so the relays only ever see encrypted connection offers.
-    const room = joinRoom({ appId: APP_ID, password: `srm-${this.code}`, relayConfig: { urls: WALK_RELAYS } }, this.code);
+    const room = joinRoom({ appId: APP_ID, password: `srm-${this.code}`, relayConfig: { urls: WALK_RELAYS }, ...(turnConfig.length ? { turnConfig } : {}) }, this.code);
     this.room = room;
     const pose = room.makeAction<Pose>("pose");
     const hi = room.makeAction<{ name: string; outfit: Outfit }>("hi");
