@@ -118,6 +118,8 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
   vec2 gi = floor(g);
   vec2 gf = fract(g) - vec2(h21(gi), h21(gi + 3.1)) * 0.6 - 0.2;
   float stroke = step(0.82, h21(gi + 7.7)) * step(abs(gf.x + gf.y * 0.35), 0.03) * step(abs(gf.y), 0.22);
+  // Strokes thinner than a pixel would glitter as you move: fade them out with distance.
+  stroke *= 1.0 - smoothstep(0.015, 0.05, max(fwidth(vWorld.x), fwidth(vWorld.z)));
   diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.62, stroke);`,
       );
     }
@@ -127,7 +129,7 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
         "#include <color_fragment>",
         `#include <color_fragment>
   float grain = h21(floor(vWorld.xz * 7.0));
-  diffuseColor.rgb *= 0.94 + 0.08 * grain;
+  diffuseColor.rgb *= 0.94 + 0.08 * mix(0.5, grain, 1.0 - smoothstep(0.06, 0.16, max(fwidth(vWorld.x), fwidth(vWorld.z))));
   float patchN = n21(vWorld.xz * 0.07 + 3.0);
   float repaired = smoothstep(0.72, 0.74, patchN);
   diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.82, repaired);
@@ -145,9 +147,10 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
       s.fragmentShader = s.fragmentShader.replace(
         "#include <color_fragment>",
         `#include <color_fragment>
-  float band = step(0.5, fract(vLen / 1.1));
+  float kerbAA = 1.0 - smoothstep(0.2, 0.55, fwidth(vLen / 1.1) * 1.1);
+  float band = mix(0.5, step(0.5, fract(vLen / 1.1)), kerbAA);
   diffuseColor.rgb = mix(vec3(0.16, 0.17, 0.19), vec3(0.95, 0.8, 0.27), band);
-  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.15, 0.2), step(fract(vLen / 1.1), 0.03) * 0.6);`,
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.15, 0.2), step(fract(vLen / 1.1), 0.03) * 0.6 * kerbAA);`,
       );
     }
     if (opts.water) {
@@ -170,7 +173,7 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
   vec2 t = vec2(vLen / 0.45, (vLat * 0.5 + 0.5) * vW / 0.3);
   t.x += step(1.0, mod(floor(t.y), 2.0)) * 0.5;
   vec2 f = fract(t);
-  float joint = step(f.x, 0.07) + step(f.y, 0.1);
+  float joint = (step(f.x, 0.07) + step(f.y, 0.1)) * (1.0 - smoothstep(0.06, 0.25, max(fwidth(t.x), fwidth(t.y))));
   float tone = h21(floor(t)) * 0.08;
   diffuseColor.rgb *= 0.95 + tone;
   diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.72, clamp(joint, 0.0, 1.0));`,
@@ -183,9 +186,14 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
           "#include <color_fragment>",
           `#include <color_fragment>
   // Windows, by style (buildings.ts): 1 punched · 2 grid · 3 hostel (with grills) · 4 curtain glass · 5 corrugated.
+  // How many metres of wall one pixel covers (worked out outside the branch, where derivatives are reliable). Thin
+  // details (frames, bars, mullions) fade once they're under a pixel, and the windows blend to their average once
+  // they're only a few pixels tall: nothing glitters as you move.
+  float pix = max(fwidth(vU), fwidth(vWorld.y));
   if (abs(vWNormal.y) < 0.5 && vStyle > 0.5) {
     float st = floor(vStyle + 0.5);
     float fy = vWorld.y;
+    float thin = 1.0 - smoothstep(0.04, 0.14, pix);
     float row = fract(fy / 3.4);
     float ground = step(fy, 3.4);
     vec3 glassC = vec3(0.16, 0.21, 0.27);
@@ -194,7 +202,7 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
     if (st < 1.5) {
       float c = fract(vU / 2.6);
       win = box2(vec2(c, row), vec2(0.36, 0.34), vec2(0.64, 0.7));
-      frame = box2(vec2(c, row), vec2(0.32, 0.3), vec2(0.68, 0.74)) - win;
+      frame = (box2(vec2(c, row), vec2(0.32, 0.3), vec2(0.68, 0.74)) - win) * thin;
       diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.72, frame);
     } else if (st < 2.5) {
       float c = fract(vU / 3.2);
@@ -204,7 +212,7 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
     } else if (st < 3.5) {
       float c = fract(vU / 3.6);
       win = box2(vec2(c, row), vec2(0.18, 0.3), vec2(0.82, 0.76));
-      frame = box2(vec2(c, row), vec2(0.15, 0.27), vec2(0.85, 0.79)) - win;
+      frame = (box2(vec2(c, row), vec2(0.15, 0.27), vec2(0.85, 0.79)) - win) * thin;
       // Grills: thin bars across the glass.
       line = win * (step(fract(vU * 2.2), 0.08) + step(abs(row - 0.53), 0.012));
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.97, 0.96, 0.93), frame);
@@ -214,16 +222,19 @@ export function bend<T extends THREE.Material>(m: T, opts: Pick<Opts, "windows" 
       line = step(fract(vU / 1.6), 0.025) + step(row, 0.03);
       glassC = mix(vec3(0.2, 0.37, 0.63), vec3(0.42, 0.62, 0.82), smoothstep(0.0, 1.0, fract(vU * 0.13 + fy * 0.02)));
     } else {
-      diffuseColor.rgb *= 0.9 + 0.1 * step(0.5, fract(vU / 0.35));
+      diffuseColor.rgb *= 0.9 + 0.1 * mix(0.5, step(0.5, fract(vU / 0.35)), 1.0 - smoothstep(0.03, 0.1, pix));
       line = step(abs(fy - 4.2), 0.06);
     }
+    line *= thin;
+    frame *= thin;
+    win = mix(win, 0.4, smoothstep(0.35, 1.0, pix));
     winMask = clamp(win, 0.0, 1.0);
     // Monsoon weathering: faint vertical streaks under the windows and darker toward the ground.
     float streak = smoothstep(0.55, 0.95, n21(vec2(vU * 0.9, floor(fy / 3.4) * 7.0 + fy * 0.05)));
     diffuseColor.rgb *= (1.0 - 0.07 * streak * (1.0 - winMask)) * (0.94 + 0.06 * smoothstep(0.0, 4.0, fy));
     diffuseColor.rgb = mix(diffuseColor.rgb, glassC, winMask);
     // A soft sky reflection band on the glass.
-    diffuseColor.rgb += winMask * 0.08 * step(0.55, fract(vU * 0.21 + row * 0.6));
+    diffuseColor.rgb += winMask * 0.08 * mix(0.45, step(0.55, fract(vU * 0.21 + row * 0.6)), thin);
     diffuseColor.rgb = mix(diffuseColor.rgb, inkC, clamp(line + frame * 0.75, 0.0, 1.0) * 0.85);
   }`,
         )
