@@ -3,4 +3,4 @@
  * game itself then runs browser to browser. Every player must use the same ones, so they're fixed here, and the
  * site's Content-Security-Policy (next.config.ts) allows exactly these.
  */
-export const WALK_RELAYS = ["wss://nos.lol", "wss://relay.primal.net", "wss://nostr.mom", "wss://relay.nostr.net", "wss://nostr.oxtr.dev"];
+export const WALK_RELAYS = ["wss://nos.lol", "wss://relay.primal.net", "wss://relay.nostr.net", "wss://nostr.oxtr.dev", "wss://relay.nos.social"];
